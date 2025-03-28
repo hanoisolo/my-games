@@ -1,1 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal or No Drink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+    <h1>Deal or No Drink</h1>
+
+    <!-- 1. Setup Screen -->
+    <div id="setup-screen" class="screen active">
+        <h2>Game Setup</h2>
+
+        <!-- Player Count -->
+        <div>
+            <label for="player-count">Number of Players (2-8):</label>
+            <input type="number" id="player-count" min="2" max="8" value="2">
+        </div>
+
+        <!-- Player Names (Dynamically generated) -->
+        <div id="player-names-container">
+            <!-- Input fields will be added here by JS -->
+        </div>
+
+        <!-- Rules -->
+        <div>
+            <label for="max-shots">Max Shots Per Player (0 for unlimited):</label>
+            <input type="number" id="max-shots" min="0" value="10">
+            <small>(Player sits out if limit reached)</small>
+        </div>
+
+        <button id="start-game-btn">Start Game</button>
+    </div>
+
+    <!-- 2. Game Screen -->
+    <div id="game-screen" class="screen">
+        <div id="turn-indicator">Current Turn: Player 1</div>
+        <div id="player-info-container">
+            <!-- Player names and shot counts will be displayed here -->
+        </div>
+
+        <div id="tile-grid">
+            <!-- Tiles will be generated here by JS -->
+        </div>
+
+        <!-- Optional: Area to display the revealed action clearly -->
+        <div id="action-display" style="min-height: 50px; margin-top: 20px; font-weight: bold;"></div>
+    </div>
+
+    <!-- 3. Game Over Screen -->
+    <div id="game-over-screen" class="screen">
+        <h2>Game Over!</h2>
+        <div id="results">
+            <!-- Game results/winner info here -->
+        </div>
+        <button id="play-again-btn">Play Again</button>
+    </div>
+
+    <!-- Optional: Modal for complex interactions (like choosing a player) -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">×</span>
+            <p id="modal-text">Some text in the Modal..</p>
+            <div id="modal-options"></div>
+        </div>
+    </div>
+
+
+    <script src="script.js" defer></script>
+</body>
+</html>
