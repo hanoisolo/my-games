@@ -87,13 +87,14 @@ small {
     display: flex; /* Use flex for better alignment */
     flex-wrap: wrap; /* Allow wrapping */
     align-items: center;
-    gap: 10px; /* Space between label and input */
+    gap: 10px; /* Space between label and input/stepper */
 }
 
 #setup-screen label {
     flex-basis: 200px; /* Fixed width for labels */
     text-align: right;
     margin-right: 10px;
+    align-self: center; /* Vertically center label with input/stepper */
 }
 
 #setup-screen input[type="number"],
@@ -108,6 +109,22 @@ small {
     flex-grow: 1; /* Allow input to take remaining space */
     max-width: 250px; /* Limit max width */
 }
+
+/* Style for the read-only player count input within stepper */
+#setup-screen .number-input-stepper input[type="number"] {
+    text-align: center;
+    font-weight: bold;
+    width: 50px; /* Fixed width for the number display */
+    padding: 10px 5px; /* Adjust padding */
+    /* Remove browser default spinners */
+    -webkit-appearance: none;
+    margin: 0;
+    -moz-appearance: textfield;
+    background-color: var(--bg-medium); /* Make it look less like an active input */
+    border: 1px solid var(--bg-dark);
+    flex-grow: 0; /* Don't allow it to grow */
+}
+
 
 #player-names-container input[type="text"] {
      max-width: 300px; /* Wider for names */
@@ -134,9 +151,49 @@ small {
     color: var(--text-light);
 }
 
+/* --- Input Stepper Styles --- */
+.number-input-stepper {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between buttons and input */
+    flex-grow: 1; /* Allow stepper to take available space */
+    max-width: 180px; /* Adjust as needed, smaller width */
+    justify-content: center; /* Center items within the stepper */
+}
+
+.stepper-btn {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 8px 12px; /* Good touch target size */
+    font-size: 1.1em; /* Make arrows slightly bigger */
+    line-height: 1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    font-weight: bold;
+    appearance: none;
+    margin: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 40px; /* Ensure minimum width */
+}
+
+.stepper-btn:hover {
+    background-color: var(--accent-secondary);
+}
+
+.stepper-btn:disabled {
+     background-color: var(--bg-medium);
+     color: var(--tile-revealed-bg);
+     cursor: not-allowed;
+     opacity: 0.6;
+}
+
 
 /* --- Button Styles --- */
-button {
+button:not(.stepper-btn):not(.close-btn) { /* Exclude stepper/close buttons from general styling */
     background-color: var(--accent-primary);
     color: white;
     padding: 12px 25px;
@@ -153,12 +210,12 @@ button {
     margin: 25px auto 10px auto; /* Center button */
     box-shadow: var(--shadow-light);
 }
-button:hover {
+button:not(.stepper-btn):not(.close-btn):hover {
     background-color: var(--accent-secondary);
     transform: translateY(-2px); /* Slight lift on hover */
     box-shadow: var(--shadow-medium);
 }
-button:active {
+button:not(.stepper-btn):not(.close-btn):active {
     transform: translateY(0px); /* Press down effect */
     box-shadow: var(--shadow-light);
 }
@@ -270,7 +327,7 @@ button:active {
     border-radius: 8px;
     cursor: pointer;
     box-shadow: var(--shadow-light);
-    position: relative; /* Needed for pseudo-elements if used later */
+    position: relative; /* Needed for pseudo-elements */
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), /* Elastic scale */
                 box-shadow 0.3s ease;
     /* Prevent text selection */
@@ -287,7 +344,7 @@ button:active {
 /* --- Tile Reveal Animation --- */
 .tile.revealed {
     cursor: default;
-    transform: rotateY(180deg); /* Flip effect start state (JS adds class) */
+    transform: rotateY(180deg); /* Flip effect base state */
     transition: transform 0.6s ease, background-color 0.6s ease, color 0.6s ease; /* Animate flip */
     background: var(--tile-revealed-bg); /* Revealed color */
     color: var(--text-light); /* Text color on revealed tile */
@@ -302,7 +359,7 @@ button:active {
     align-items: center;
     text-align: center;
 }
-/* Actual flip happens when class is added */
+/* Actual flip happens when class is added by JS */
 .tile.reveal-animation {
     transform: rotateY(180deg);
 }
@@ -359,6 +416,12 @@ button:active {
     display: block;
     margin-bottom: 0.5em;
 }
+#results .player-info-status.out { /* Style OUT text in results */
+    color: var(--accent-warn);
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-left: 5px;
+}
 
 
 /* --- Modal Styles (Improved) --- */
@@ -372,7 +435,6 @@ button:active {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
-    /* Add fade in for modal */
     animation: fadeInModal 0.3s ease-out;
 }
 
@@ -392,7 +454,6 @@ button:active {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     position: relative;
     color: var(--text-light);
-    /* Slide in effect */
     animation: slideInModal 0.4s ease-out;
 }
 
@@ -410,13 +471,16 @@ button:active {
     font-size: 32px;
     font-weight: bold;
     line-height: 1;
+    padding: 0; /* Reset padding */
+    background: none; /* Reset background */
+    border: none; /* Reset border */
+    cursor: pointer;
 }
 
 .close-btn:hover,
 .close-btn:focus {
     color: var(--text-light);
     text-decoration: none;
-    cursor: pointer;
 }
 
 #modal-text {
@@ -432,17 +496,28 @@ button:active {
     align-items: center; /* Center buttons */
 }
 
+/* Style buttons inside the modal */
 #modal-options button {
     width: 80%; /* Make buttons wide */
     margin: 5px 0; /* Adjust margins */
     padding: 10px 15px;
     font-size: 1em;
-    /* Use secondary accent color for modal buttons? */
-    background-color: var(--accent-info); /* Blue for choices? */
+    background-color: var(--accent-info); /* Blue for choices */
+    color: white;
+    border: none;
+    border-radius: 20px; /* Match general button style */
+    cursor: pointer;
+    font-family: var(--font-headings);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 #modal-options button:hover {
      background-color: #2980b9; /* Darker blue */
+     transform: translateY(-1px);
 }
+
 
 /* --- Responsiveness --- */
 @media (max-width: 768px) {
@@ -456,17 +531,27 @@ button:active {
         text-align: left;
         margin-right: 5px;
     }
-    #setup-screen input[type="number"],
+    #setup-screen input[type="number"]:not(#player-count), /* Exclude player count from this rule */
     #setup-screen input[type="text"] {
          max-width: none; /* Allow full width */
     }
     #player-names-container input {
-        margin-left: 0; /* Remove margin */
-        width: 100%; /* Full width */
+        margin-left: 105px; /* Adjust based on new label width + gap */
+        width: calc(100% - 105px); /* Adjust width */
     }
      #player-names-container label.player-label {
-        display: none; /* Hide separate label on mobile, use placeholder */
+        flex-basis: 100px; /* Match other labels */
+        /* Maybe hide on very small screens if needed */
     }
+
+    .number-input-stepper {
+        max-width: 160px; /* Can be slightly smaller */
+        justify-content: flex-start; /* Align left */
+    }
+    .stepper-btn {
+        padding: 10px 14px; /* Slightly larger touch area */
+    }
+
 
     #tile-grid {
         grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); /* Smaller tiles */
@@ -479,15 +564,47 @@ button:active {
     .player-info { min-width: 120px; padding: 8px 12px; }
 
     .modal-content { margin: 15% auto; width: 90%; padding: 20px; }
+    #modal-options button { width: 90%; }
 }
 
 @media (max-width: 480px) {
     body { padding: 10px; }
     .screen { padding: 15px; margin: 15px auto; }
     h1 { font-size: 1.8em; }
-    #setup-screen div { flex-direction: column; align-items: stretch; gap: 5px; }
-    #setup-screen label { text-align: left; margin-bottom: 3px; }
-    button { font-size: 1em; padding: 10px 20px; }
+
+    #setup-screen div {
+        flex-direction: column; /* Stack label and input/stepper */
+        align-items: stretch; /* Make children full width */
+        gap: 5px;
+    }
+    #setup-screen label {
+        text-align: left;
+        margin-bottom: 3px;
+        margin-right: 0; /* Remove right margin when stacked */
+        flex-basis: auto; /* Reset basis */
+        width: 100%; /* Take full width */
+    }
+    .number-input-stepper {
+        justify-content: flex-start; /* Align stepper to the start below label */
+        margin-top: 5px; /* Add space below label */
+        max-width: none; /* Allow it to take more width */
+        width: auto; /* Don't force 100% width */
+        flex-grow: 0; /* Don't grow */
+    }
+
+    #player-names-container input {
+        margin-left: 0; /* Remove margin */
+        width: 100%; /* Full width */
+    }
+     #player-names-container label.player-label {
+        display: none; /* Hide separate label on mobile, use placeholder */
+    }
+
+
+    button:not(.stepper-btn):not(.close-btn) { /* General buttons */
+        font-size: 1em;
+        padding: 10px 20px;
+    }
     #tile-grid {
         grid-template-columns: repeat(auto-fit, minmax(55px, 1fr)); /* Even smaller */
         gap: 6px;
@@ -495,4 +612,5 @@ button:active {
     .tile { font-size: 1.2em; }
     #turn-indicator { font-size: 1.3em; }
     #action-display { font-size: 1em; padding: 10px; }
+    .modal-content { margin: 20% auto; }
 }
