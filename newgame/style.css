@@ -280,6 +280,17 @@ button:not(.stepper-btn):not(.close-btn):active {
 .player-info-status.immune { color: var(--accent-info); }
 .player-info-status.out { color: var(--accent-warn); }
 
+/* Style for Alternatives Left */
+.player-info-alternatives {
+    display: block; /* Put it on its own line */
+    font-size: 0.8em;
+    color: var(--accent-info); /* Use info color or another distinct one */
+    margin-top: 4px;
+}
+.player-info.player-out .player-info-alternatives {
+    display: none; /* Hide if player is out */
+}
+
 
 .player-info.current-player {
     background-color: var(--accent-primary);
@@ -287,7 +298,8 @@ button:not(.stepper-btn):not(.close-btn):active {
     transform: scale(1.05); /* Make current player slightly bigger */
 }
 .player-info.current-player .player-info-name,
-.player-info.current-player .player-info-shots {
+.player-info.current-player .player-info-shots,
+.player-info.current-player .player-info-alternatives { /* Also style alts left */
     color: white; /* White text on accent background */
 }
 
@@ -511,12 +523,19 @@ button:not(.stepper-btn):not(.close-btn):active {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
 }
-#modal-options button:hover {
+#modal-options button:hover:not(:disabled) { /* Add :not(:disabled) */
      background-color: #2980b9; /* Darker blue */
      transform: translateY(-1px);
 }
+/* Style for disabled modal buttons */
+#modal-options button:disabled {
+    background-color: grey;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 
 
 /* --- Responsiveness --- */
@@ -541,7 +560,6 @@ button:not(.stepper-btn):not(.close-btn):active {
     }
      #player-names-container label.player-label {
         flex-basis: 100px; /* Match other labels */
-        /* Maybe hide on very small screens if needed */
     }
 
     .number-input-stepper {
