@@ -77,7 +77,20 @@ document.addEventListener('DOMContentLoaded', () => {
         "Do a 20-second interpretive dance to no music.",
         "Recite a tongue twister 3 times fast (e.g., “She sells seashells by the seashore”).",
         "Hold an ice cube in your hand until it melts (or 30 seconds, whichever comes first).",
-        "Arm wrestle the person to your left (best of 1, no shot for the loser)."
+        "Arm wrestle the person to your left (best of 1, no shot for the loser).",
+        "Do a 15-second impression of your favorite animal.",
+        "Text a random contact “I’m being chased by a goose!” and wait for their reply.",
+        "Spin around 10 times and then try to walk in a straight line.",
+        "Do 15 squats while singing “Happy Birthday” (even if it’s no one’s birthday).",
+        "Hold a staring contest with the person across from you—first to blink loses.",
+        "Shout “I am the champion!” in your most dramatic voice, then flex for 10 seconds.",
+        "Hop on one foot while naming 5 fruits or vegetables.",
+        "Pretend to be a robot for the next minute (voice and movements).",
+        "Do a 20-second air guitar solo to an imaginary rock song.",
+        "Tell the group your most embarrassing childhood story in 30 seconds.",
+        "Wear a blindfold (or close your eyes) and guess 3 objects by touch alone.",
+        "Do a 15-second “slow-motion fight scene” with an imaginary opponent.",
+        "Say “chugga chugga choo choo” 5 times fast while mimicking a train."
     ];
 
 
