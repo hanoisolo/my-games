@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="style.css"> <!-- Ensure this points to your CSS file -->
 </head>
 <body>
 
@@ -22,7 +22,7 @@
             <label for="player-count">Number of Players (2-8):</label>
             <div class="number-input-stepper">
                 <button type="button" class="stepper-btn stepper-down" aria-label="Decrease player count">▼</button>
-                <input type="number" id="player-count" min="2" max="8" value="2" readonly> <!-- Readonly forces button usage -->
+                <input type="number" id="player-count" min="2" max="8" value="2" readonly>
                 <button type="button" class="stepper-btn stepper-up" aria-label="Increase player count">▲</button>
             </div>
         </div>
@@ -32,29 +32,38 @@
             <!-- Input fields will be added here by JS -->
         </div>
 
-        <!-- Rules -->
+        <!-- Rules Input -->
         <div>
-            <label for="max-shots">Max Shots Per Player (0 for unlimited):</label>
+            <label for="max-shots">Max Shots Per Player (0=unlimited):</label>
             <input type="number" id="max-shots" min="0" value="10">
             <small>(Player sits out if limit reached)</small>
         </div>
 
+        <!-- Initial Alternatives Input (NEW) -->
+        <div>
+            <label for="initial-alts">Alternatives Per Player:</label>
+            <input type="number" id="initial-alts" min="0" value="3">
+            <small>(Times player can skip shots)</small>
+        </div>
+
+
         <button id="start-game-btn">Start Game</button>
+        <!-- How to Play Button -->
+        <button id="how-to-play-btn" type="button" class="secondary-btn">How to Play</button>
     </div>
 
     <!-- 2. Game Screen -->
     <div id="game-screen" class="screen">
         <div id="turn-indicator">Current Turn: Player 1</div>
         <div id="player-info-container">
-            <!-- Player names, shot counts, and alternatives left will be displayed here -->
+            <!-- Player names, shots, and alts will be displayed here -->
         </div>
-
         <div id="tile-grid">
             <!-- Tiles will be generated here by JS -->
         </div>
-
-        <!-- Area to display the revealed action clearly -->
-        <div id="action-display" style="min-height: 50px; margin-top: 20px; font-weight: bold;"></div>
+        <div id="action-display">
+            <!-- Action text appears here -->
+        </div>
     </div>
 
     <!-- 3. Game Over Screen -->
@@ -66,16 +75,125 @@
         <button id="play-again-btn">Play Again</button>
     </div>
 
-    <!-- Optional: Modal for complex interactions (choosing player, shot alternative) -->
+    <!-- Choice Modal (for alternatives/player selection) -->
     <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">×</span>
+        <div class="modal-content choice-modal-content"> <!-- Specific class -->
+            <span class="close-btn choice-modal-close">×</span> <!-- Specific class -->
             <p id="modal-text">Some text in the Modal..</p>
             <div id="modal-options"></div>
         </div>
     </div>
 
+    <!-- Rules Modal (NEW) -->
+    <div id="rules-modal" class="modal">
+        <div class="modal-content rules-modal-content"> <!-- Specific class -->
+            <span class="close-btn rules-modal-close">×</span> <!-- Specific class -->
+            <h2>How to Play: Deal or No Drink</h2>
+            <div id="rules-content">
+                <!-- Rules content here (as provided before) -->
+                <h3>Objective:</h3>
+                <p>The goal is simple: survive the game! Be the last player standing who hasn't been eliminated by reaching the shot limit, OR have the fewest shots taken when all the tiles run out.</p>
 
-    <script src="script.js" defer></script> <!-- Link to your JS file -->
+                <h3>Game Setup:</h3>
+                <ol>
+                    <li><strong>Number of Players:</strong> Use the <code>▼</code> and <code>▲</code> buttons to select the number of players (minimum 2, maximum 8).</li>
+                    <li><strong>Player Names:</strong> Enter a unique name for each player in the fields provided.</li>
+                    <li><strong>Max Shots:</strong> Set the maximum number of shots a player can take before being eliminated. If a player reaches this number, they are out of the game! Set this to <code>0</code> for unlimited shots (no elimination based on shot count).</li>
+                    <li><strong>Alternatives Per Player:</strong> Set the starting number of times each player can choose to do an alternative activity instead of taking shots.</li>
+                    <li><strong>Start Game:</strong> Once everything is set, click "Start Game"!</li>
+                </ol>
+
+                <h3>Gameplay:</h3>
+                <ol>
+                    <li><strong>Turns:</strong> The game proceeds in turns. The "Current Turn" indicator at the top shows whose turn it is. Players who are eliminated ("OUT") will be skipped automatically.</li>
+                    <li><strong>Picking a Tile:</strong> On your turn, click any <em>unrevealed</em> tile on the grid (the ones showing a number).</li>
+                    <li><strong>Revealing the Action:</strong> The tile will flip over, revealing an action. The action text will also appear below the grid.</li>
+                    <li><strong>Performing the Action:</strong> Follow the instructions on the tile. See "Tile Actions Explained" below for details.</li>
+                    <li><strong>Next Turn:</strong> After the action is completed (and any choices are made), the turn passes to the next player in the current play direction.</li>
+                </ol>
+
+                <h3>Tile Actions Explained:</h3>
+                <p>Tiles hide various actions. Here's what to expect:</p>
+                <ul>
+                    <li><strong>Take Shots (e.g., "Take 1 Shot", "Take 2 Shots"):</strong> The player whose turn it is must take the specified number of shots OR choose the alternative activity (if available, see below).</li>
+                    <li><strong>Assign Shots (Positional - e.g., "Person to your Left takes 1 shot"):</strong> The player to the immediate left/right (following the current play direction) takes the shot(s) OR chooses the alternative activity (if available). If that player is already out, the action has no effect.</li>
+                    <li><strong>Assign Shots (Targeted - e.g., "Choose someone to take 2 shots"):</strong> A modal window will pop up. The current player chooses another active player from the list to take the shot(s) OR do the alternative activity (if available).</li>
+                    <li><strong>Social! (Everyone drinks 1):</strong> All players <em>currently in the game</em> (not "OUT") must take 1 shot. <em>Note: For simplicity, the "Social!" action currently does <strong>not</strong> offer the alternative activity option.</em></li>
+                    <li><strong>Safe!:</strong> Lucky you! Nothing happens. Your turn ends.</li>
+                    <li><strong>Reverse Play Order:</strong> The direction of play reverses (clockwise becomes counter-clockwise, and vice-versa). This affects who is "left" and "right" for other tiles! The display will briefly note the change.</li>
+                    <li><strong>Skip Your Next Turn:</strong> The player whose turn it is will miss their <em>next</em> turn when it comes around again.</li>
+                    <li><strong>Immunity for next shot assigned to you:</strong> The player gains Immunity. This automatically blocks the <em>next</em> set of shots <em>assigned to them where they choose the "Take Shot(s)" option</em>. Immunity is used up once it blocks shots. It does <em>not</em> protect against "Social!" and is not used if the player chooses the "Do Activity" alternative. You'll see "(Immune)" next to the player's name while active.</li>
+                    <li><strong>Waterfall (3 seconds):</strong> A mini-game!
+                        <ul>
+                           <li>On the count of three, <em>everyone currently in the game</em> (not "OUT") starts drinking their beverage simultaneously.</li>
+                           <li>The player who revealed the tile drinks for about 3 seconds and then <strong>must stop</strong> drinking. They signal they have stopped (e.g., by putting their drink down or saying "Stopped!").</li>
+                           <li>The player to their left (following the current play direction) <strong>must keep drinking</strong> until the first player (the one who revealed the tile) has stopped. Only <em>after</em> the first player stops can the second player choose to stop drinking whenever they wish.</li>
+                           <li>The third player (to the left of the second player) <strong>must keep drinking</strong> until the <em>second</em> player has stopped drinking. Only then can the third player choose to stop.</li>
+                           <li>This continues around the circle. <strong>Crucially: You cannot stop drinking until the person immediately preceding you in the waterfall chain has stopped drinking.</strong></li>
+                           <li>The last person in the chain might end up drinking the longest, depending on when everyone else decides to stop!</li>
+                        </ul>
+                    </li>
+                    <li><strong>Categories (Loser takes 1 shot):</strong> A mini-game!
+                        <ul>
+                            <li>The player who revealed the tile chooses a category (e.g., "Types of Cars", "Breakfast Cereals", "Movie Stars").</li>
+                            <li>Starting with the player to their left, each player names something within that category.</li>
+                            <li>You cannot repeat an answer already given.</li>
+                            <li>The first player to hesitate too long, repeat an answer, or give an invalid answer "loses".</li>
+                            <li>The loser takes 1 shot OR does an alternative activity (if available, player-enforced).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Make a Rule (Lasts until next rule):</strong>
+                        <ul>
+                            <li>The player who revealed the tile gets to make a new rule for the game (e.g., "You can only drink with your left hand", "No saying the word 'drink'", "Thumbmaster - last person to put their thumb on the table drinks").</li>
+                            <li>A prompt will appear to enter the rule.</li>
+                            <li>Decide on a penalty for breaking the rule (usually 1 shot or an activity).</li>
+                            <li>This rule stays in effect until <em>another</em> "Make a Rule" tile is revealed or the game ends. The current rule (if any) is displayed below the grid.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                 <h3>Alternative Activity Option:</h3>
+                 <ul>
+                    <li>Each player starts with a set number of "Alts" (alternatives).</li>
+                    <li>Whenever a player is assigned shots (Take, Left/Right, Choose Someone, Mini-Game penalties), a modal window will appear.</li>
+                    <li>If the player has **Alts Left > 0**, they will see two options:
+                        <ol>
+                            <li><strong>Take Shot(s):</strong> The player takes the assigned shots. Immunity (if held) will be used automatically.</li>
+                            <li><strong>Do an Activity Instead:</strong> The player performs a random activity. They do **not** take shots, Immunity is **not** used, and their "Alts Left" count decreases by 1.</li>
+                        </ol>
+                    </li>
+                     <li>If the player has **Alts Left = 0**, the "Do an Activity Instead" option will **not** appear. They must choose "Take Shot(s)".</li>
+                    <li><em>Exception:</em> The "Social!" tile currently does not offer this choice regardless of Alts Left.</li>
+                </ul>
+
+                <h3>Elimination (Max Shots):</h3>
+                <ul>
+                    <li>If a "Max Shots" limit was set at the start (and it's not 0), any player who takes a shot that brings their total <em>equal to or over* the limit is immediately **OUT**.</li>
+                    <li>Their status changes, they cannot take any more turns or be assigned shots/activities, and they cannot win (unless everyone gets out).</li>
+                </ul>
+
+                <h3>Winning the Game:</h3>
+                <p>The game ends when one of these happens:</p>
+                <ol>
+                    <li><strong>Last Player Standing:</strong> If all players except one have been eliminated (by reaching the Max Shots limit), the remaining player is the winner!</li>
+                    <li><strong>All Tiles Revealed:</strong> If all tiles are flipped over before a single winner emerges:
+                        <ul>
+                            <li>The player(s) still <em>in</em> the game (not "OUT") with the <em>lowest</em> total shots taken wins.</li>
+                            <li>If multiple players are tied for the lowest score, they all win!</li>
+                        </ul>
+                    </li>
+                    <li><strong>Mutual Destruction:</strong> If all players get eliminated (e.g., the last two players reach the shot limit simultaneously), there is no winner.</li>
+                </ol>
+
+                <h3>Play Again:</h3>
+                <p>After the game ends, click the "Play Again" button on the results screen to return to the setup and start a new game!</p>
+
+                <p style="text-align:center; font-weight: bold; margin-top: 20px;">Have Fun and Drink Responsibly!</p>
+
+            </div> <!-- End #rules-content -->
+        </div> <!-- End .modal-content -->
+    </div> <!-- End #rules-modal -->
+
+    <script src="script.js" defer></script> <!-- Ensure this points to your JS file -->
 </body>
 </html>
