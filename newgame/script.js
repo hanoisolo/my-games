@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM fully loaded and parsed"); // DEBUG
+
     // --- DOM Element References ---
     const setupScreen = document.getElementById('setup-screen');
     const gameScreen = document.getElementById('game-screen');
@@ -6,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerCountInput = document.getElementById('player-count');
     const playerNamesContainer = document.getElementById('player-names-container');
     const maxShotsInput = document.getElementById('max-shots');
+    const initialAltsInput = document.getElementById('initial-alts'); // NEW: Ref for Alts input
     const startGameBtn = document.getElementById('start-game-btn');
     const turnIndicator = document.getElementById('turn-indicator');
     const playerInfoContainer = document.getElementById('player-info-container');
@@ -18,29 +21,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepperUpBtn = document.querySelector('.stepper-up');
     const stepperDownBtn = document.querySelector('.stepper-down');
 
-    // Modal Elements
-    const modal = document.getElementById('modal');
+    // How to Play Elements
+    const howToPlayBtn = document.getElementById('how-to-play-btn');
+    const rulesModal = document.getElementById('rules-modal');
+    const rulesModalCloseBtn = rulesModal.querySelector('.rules-modal-close');
+
+    // Choice Modal Elements
+    const choiceModal = document.getElementById('modal'); // Keep original ID reference
     const modalText = document.getElementById('modal-text');
     const modalOptions = document.getElementById('modal-options');
-    const closeBtn = document.querySelector('.modal .close-btn');
+    const choiceModalCloseBtn = choiceModal.querySelector('.choice-modal-close');
 
+    // Basic check for essential elements
+    if (!setupScreen || !gameScreen || !gameOverScreen || !playerCountInput || !playerNamesContainer || !startGameBtn || !choiceModal || !rulesModal || !maxShotsInput || !initialAltsInput) { // Added check for new inputs
+        console.error("CRITICAL ERROR: One or more essential DOM elements not found!");
+        alert("Error initializing the game. Please check the HTML structure.");
+        return; // Stop script execution
+    }
+    console.log("Essential DOM elements found."); // DEBUG
 
     // --- Game State Variables ---
-    let players = []; // Array of { name: string, shotsTaken: number, isOut: boolean, id: number, hasImmunity: boolean, alternativesUsed: number }
+    let players = []; // Array of { name: string, shotsTaken: number, altsRemaining: number, isOut: boolean, id: number, hasImmunity: boolean } // Added altsRemaining
     let currentPlayerIndex = 0;
-    let tiles = []; // Array of { id: number, action: string, revealed: boolean }
+    let tiles = [];
     let maxShots = 0;
+    let initialAlts = 3; // Default value, will be overwritten by input
     let totalTiles = 0;
     let revealedTilesCount = 0;
     let gameActive = false;
     let playOrderReversed = false;
-    let currentRule = null; // For 'Make a Rule' tile
-    let activeTurnCallback = null; // Store the callback for modal resolution
+    let currentRule = null;
+    let activeTurnCallback = null;
 
 
     // --- Tile Action Pool ---
     const baseActions = [
-        // Common
         'Take 1 Shot', 'Take 1 Shot', 'Take 1 Shot', 'Take 1 Shot', 'Take 1 Shot',
         'Take 2 Shots', 'Take 2 Shots', 'Take 2 Shots',
         'Person to your Left takes 1 shot', 'Person to your Left takes 1 shot',
@@ -48,13 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'Choose someone to take 1 shot', 'Choose someone to take 1 shot',
         'Safe!', 'Safe!', 'Safe!',
         'Social! (Everyone drinks 1)', 'Social! (Everyone drinks 1)',
-        // Less Common
         'Take 3 Shots',
         'Choose someone to take 2 shots',
         'Waterfall (3 seconds)',
         'Categories (Loser takes 1 shot)',
         'Make a Rule (Lasts until next rule)',
-        // Rare / Game Changers
         'Reverse Play Order',
         'Skip Your Next Turn',
         'Immunity for next shot assigned to you',
@@ -95,711 +108,374 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Event Listeners ---
-    stepperUpBtn.addEventListener('click', handleStepper);
-    stepperDownBtn.addEventListener('click', handleStepper);
-    startGameBtn.addEventListener('click', startGame);
-    playAgainBtn.addEventListener('click', () => location.reload());
-
-    // Modal Listeners
-    if (closeBtn) {
-        closeBtn.onclick = function() {
-            hideModal();
-            if (activeTurnCallback) {
-                console.log("Modal closed manually, advancing turn.");
-                activeTurnCallback();
-                activeTurnCallback = null;
-            }
-        }
-    }
+    console.log("Attaching event listeners..."); // DEBUG
+    if (stepperUpBtn) stepperUpBtn.addEventListener('click', handleStepper); else console.error("Stepper Up Button not found");
+    if (stepperDownBtn) stepperDownBtn.addEventListener('click', handleStepper); else console.error("Stepper Down Button not found");
+    if (startGameBtn) startGameBtn.addEventListener('click', startGame); else console.error("Start Game Button not found");
+    if (playAgainBtn) playAgainBtn.addEventListener('click', () => location.reload()); else console.warn("Play Again Button not found");
+    if (howToPlayBtn) howToPlayBtn.addEventListener('click', showRulesModal); else console.error("How to Play Button not found");
+    if (choiceModalCloseBtn) { choiceModalCloseBtn.onclick = () => { hideChoiceModal(); if (activeTurnCallback) { console.log("Choice Modal closed manually"); activeTurnCallback(); activeTurnCallback = null; } } } else { console.error("Choice Modal Close Button not found"); }
+    if (rulesModalCloseBtn) { rulesModalCloseBtn.onclick = hideRulesModal; } else { console.error("Rules Modal Close Button not found"); }
     window.onclick = function(event) {
-        if (event.target == modal) {
-            hideModal();
-            if (activeTurnCallback) {
-                console.log("Modal closed via background click, advancing turn.");
-                activeTurnCallback();
-                activeTurnCallback = null;
-            }
-        }
+        if (event.target == choiceModal) { hideChoiceModal(); if (activeTurnCallback) { console.log("Choice Modal closed via background"); activeTurnCallback(); activeTurnCallback = null; } }
+        else if (event.target == rulesModal) { hideRulesModal(); }
     }
+    console.log("Event listeners attached."); // DEBUG
 
 
     // --- Initialization ---
-    updatePlayerNameFields(); // Generate initial fields
-    updateStepperButtonsState(); // Set initial button disabled state
+    console.log("Running initial setup..."); // DEBUG
+    updatePlayerNameFields();
+    updateStepperButtonsState();
+    console.log("Initial setup complete."); // DEBUG
 
 
     // --- Stepper Functions ---
     function handleStepper(event) {
+        // ... (Keep existing handleStepper function - no changes needed here) ...
+        console.log("Stepper button clicked"); // DEBUG
         const isUp = event.target.classList.contains('stepper-up');
         let currentValue = parseInt(playerCountInput.value);
         const min = parseInt(playerCountInput.min);
         const max = parseInt(playerCountInput.max);
-
-        if (isUp && currentValue < max) {
-            currentValue++;
-        } else if (!isUp && currentValue > min) {
-            currentValue--;
-        }
-
+        if (isUp && currentValue < max) { currentValue++; }
+        else if (!isUp && currentValue > min) { currentValue--; }
         playerCountInput.value = currentValue;
-        updatePlayerNameFields(); // Update the name input fields
-        updateStepperButtonsState(); // Update button disabled state
+        console.log("Player count changed to:", currentValue); // DEBUG
+        updatePlayerNameFields(); updateStepperButtonsState();
     }
-
     function updateStepperButtonsState() {
+        // ... (Keep existing updateStepperButtonsState function - no changes needed here) ...
         const currentValue = parseInt(playerCountInput.value);
         const min = parseInt(playerCountInput.min);
         const max = parseInt(playerCountInput.max);
-
-        stepperDownBtn.disabled = (currentValue <= min);
-        stepperUpBtn.disabled = (currentValue >= max);
+        if (stepperDownBtn) stepperDownBtn.disabled = (currentValue <= min);
+        if (stepperUpBtn) stepperUpBtn.disabled = (currentValue >= max);
     }
 
 
     // --- Setup Functions ---
     function updatePlayerNameFields() {
-        const count = Math.max(
-            parseInt(playerCountInput.min) || 2,
-            Math.min(
-                parseInt(playerCountInput.max) || 8,
-                parseInt(playerCountInput.value) || 2
-            )
-        );
-        if (parseInt(playerCountInput.value) !== count) {
-            playerCountInput.value = count;
-        }
-
-        playerNamesContainer.innerHTML = ''; // Clear existing fields
-
+        // ... (Keep existing updatePlayerNameFields function - make sure wrapperDiv logic is present) ...
+        console.log("Updating player name fields..."); // DEBUG
+        if (!playerNamesContainer) { console.error("playerNamesContainer is null!"); return; }
+        const count = Math.max( parseInt(playerCountInput.min)||2, Math.min( parseInt(playerCountInput.max)||8, parseInt(playerCountInput.value)||2 ) );
+        if (parseInt(playerCountInput.value) !== count) { playerCountInput.value = count; }
+        console.log("Generating fields for", count, "players."); // DEBUG
+        playerNamesContainer.innerHTML = '';
         for (let i = 0; i < count; i++) {
-            const label = document.createElement('label');
-            label.classList.add('player-label');
-            label.htmlFor = `player-name-${i}`;
-            label.textContent = `Player ${i + 1}:`;
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.placeholder = `Enter Name`;
-            input.id = `player-name-${i}`;
-            input.required = true;
-
-            playerNamesContainer.appendChild(label);
-            playerNamesContainer.appendChild(input);
+            const label = document.createElement('label'); label.classList.add('player-label'); label.htmlFor = `player-name-${i}`; label.textContent = `Player ${i + 1}:`;
+            const input = document.createElement('input'); input.type = 'text'; input.placeholder = `Enter Name`; input.id = `player-name-${i}`; input.required = true;
+            const wrapperDiv = document.createElement('div'); wrapperDiv.style.display = 'flex'; wrapperDiv.style.alignItems = 'center'; wrapperDiv.style.gap = '10px'; wrapperDiv.style.marginBottom = '0';
+            wrapperDiv.appendChild(label); wrapperDiv.appendChild(input);
+            playerNamesContainer.appendChild(wrapperDiv);
         }
+        console.log("Player name fields updated."); // DEBUG
     }
 
     function startGame() {
+        console.log("Attempting to start game..."); // DEBUG
         const playerCount = parseInt(playerCountInput.value);
         if (playerCount < (parseInt(playerCountInput.min) || 2) || playerCount > (parseInt(playerCountInput.max) || 8)) {
-            alert(`Please select between ${playerCountInput.min} and ${playerCountInput.max} players.`);
-            return;
+            alert(`Please select between ${playerCountInput.min} and ${playerCountInput.max} players.`); console.warn("Start cancelled: Invalid player count."); return;
         }
 
         maxShots = parseInt(maxShotsInput.value) || 0;
+        initialAlts = parseInt(initialAltsInput.value); // Read initial alts value
+        // Add validation for initialAlts if desired (e.g., >= 0)
+        if (isNaN(initialAlts) || initialAlts < 0) {
+            console.warn("Invalid Initial Alts value, defaulting to 3"); // DEBUG
+            initialAlts = 3; // Default if invalid input
+            initialAltsInput.value = 3; // Correct the input display
+        }
+        console.log("Max shots:", maxShots, "| Initial Alts:", initialAlts); // DEBUG
 
-        players = [];
+        players = []; // Reset players array
         let validNames = true;
         for (let i = 0; i < playerCount; i++) {
             const nameInput = document.getElementById(`player-name-${i}`);
+            if (!nameInput) { console.error(`CRITICAL: Cannot find name input: player-name-${i}`); validNames = false; alert(`Error: Missing input for Player ${i + 1}.`); break; }
             const name = nameInput.value.trim();
-            if (!name) {
-                validNames = false;
-                break;
+            if (!name) { console.warn(`Player ${i + 1} name empty.`); validNames = false; nameInput.style.borderColor = 'var(--accent-warn)'; }
+            else {
+                nameInput.style.borderColor = '';
+                players.push({
+                    name: name,
+                    shotsTaken: 0,
+                    altsRemaining: initialAlts, // Assign initial alts count
+                    isOut: false,
+                    id: i,
+                    hasImmunity: false
+                });
+                console.log(`Added Player ${i}: ${name}, Alts: ${initialAlts}`); // DEBUG
             }
-            players.push({
-                name: name,
-                shotsTaken: 0,
-                isOut: false,
-                id: i,
-                hasImmunity: false,
-                alternativesUsed: 0 // Initialize alternatives counter
-            });
         }
 
-        if (!validNames) {
-            alert('Please enter a name for every player.');
-            return;
-        }
+        if (!validNames) { alert('Please enter a name for every player.'); console.warn("Start cancelled: Invalid names."); return; }
+        console.log("Players array populated:", players); // DEBUG
 
         totalTiles = 12 + (playerCount - 2) * 6;
         tiles = generateTiles(totalTiles);
+        console.log("Generated", totalTiles, "tiles."); // DEBUG
 
-        currentPlayerIndex = 0;
-        revealedTilesCount = 0;
-        playOrderReversed = false;
-        currentRule = null;
-        gameActive = true;
+        currentPlayerIndex = 0; revealedTilesCount = 0; playOrderReversed = false; currentRule = null; gameActive = true;
+        console.log("Game state reset. Game active:", gameActive); // DEBUG
 
-        setupScreen.classList.remove('active');
-        gameOverScreen.classList.remove('active');
-        gameScreen.classList.add('active');
+        if (setupScreen) setupScreen.classList.remove('active'); if (gameOverScreen) gameOverScreen.classList.remove('active'); if (gameScreen) gameScreen.classList.add('active');
+        console.log("Switched to Game Screen."); // DEBUG
 
-        renderGameBoard();
-        updatePlayerInfo();
-        updateTurnIndicator();
-        actionDisplay.textContent = 'Select a tile to start!';
+        renderGameBoard(); updatePlayerInfo(); updateTurnIndicator(); // Initial render calls
+        if (actionDisplay) actionDisplay.textContent = 'Select a tile to start!';
+        console.log("Initial game board rendered."); // DEBUG
     }
 
     function generateTiles(numTiles) {
-        let actions = [];
-        while (actions.length < numTiles) {
-            actions = actions.concat(baseActions);
-        }
-        actions = shuffleArray(actions.slice(0, numTiles));
-        return actions.map((action, index) => ({
-            id: index,
-            action: action,
-            revealed: false
-        }));
+        // ... (Keep existing generateTiles function - no changes needed here) ...
+        let actions = []; while (actions.length < numTiles) { actions = actions.concat(baseActions); }
+        actions = shuffleArray(actions.slice(0, numTiles)); return actions.map((a, i) => ({ id: i, action: a, revealed: false }));
     }
-
     function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
+        // ... (Keep existing shuffleArray function - no changes needed here) ...
+        for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array;
     }
 
     // --- Game Rendering Functions ---
     function renderGameBoard() {
-        tileGrid.innerHTML = '';
-        tiles.forEach(tile => {
-            const tileElement = document.createElement('div');
-            tileElement.classList.add('tile');
-            if (tile.revealed) {
-                tileElement.classList.add('revealed');
-                tileElement.innerHTML = `<span>${tile.action}</span>`;
-            } else {
-                tileElement.dataset.tileId = tile.id;
-                tileElement.innerHTML = `<span>${tile.id + 1}</span>`;
-                tileElement.addEventListener('click', handleTileClick);
-            }
-            tileGrid.appendChild(tileElement);
-        });
+        // ... (Keep existing renderGameBoard function - no changes needed here) ...
+        console.log("Rendering game board..."); if (!tileGrid) { console.error("tileGrid missing"); return; }
+        tileGrid.innerHTML = ''; tiles.forEach(tile => { const el = document.createElement('div'); el.classList.add('tile'); if (tile.revealed) { el.classList.add('revealed'); el.innerHTML = `<span>${tile.action}</span>`; } else { el.dataset.tileId = tile.id; el.innerHTML = `<span>${tile.id + 1}</span>`; el.addEventListener('click', handleTileClick); } tileGrid.appendChild(el); });
+        console.log("Game board rendered.");
     }
 
      function updatePlayerInfo() {
-        playerInfoContainer.innerHTML = '';
+        // console.log("Updating player info display..."); // DEBUG (Noisy)
+        if (!playerInfoContainer) { console.error("playerInfoContainer missing"); return; }
+        if (!players || players.length === 0) { console.warn("UpdatePlayerInfo: No players data."); playerInfoContainer.innerHTML = ''; return; }
+        console.log("UpdatePlayerInfo: Updating for players:", players); // DEBUG
+
+        playerInfoContainer.innerHTML = ''; // Clear previous info
+
         players.forEach(player => {
             const playerDiv = document.createElement('div');
             playerDiv.classList.add('player-info');
-            if (player.id === currentPlayerIndex && !player.isOut) {
-                playerDiv.classList.add('current-player');
-            }
-            if (player.isOut) {
-                playerDiv.classList.add('player-out');
-            }
+            if (player.id === currentPlayerIndex && !player.isOut) { playerDiv.classList.add('current-player'); }
+            if (player.isOut) { playerDiv.classList.add('player-out'); }
 
             let statusText = '';
-            if(player.isOut) {
-                 statusText = '<span class="player-info-status out">(OUT)</span>';
-            } else if (player.hasImmunity) {
-                 statusText = '<span class="player-info-status immune">(Immune)</span>';
-            }
+            if(player.isOut) { statusText = '<span class="player-info-status out">(OUT)</span>'; }
+            else if (player.hasImmunity) { statusText = '<span class="player-info-status immune">(Immune)</span>'; }
 
-            // Calculate remaining alternatives
-            const alternativesLeft = Math.max(0, 3 - player.alternativesUsed);
-            const alternativesDisplay = player.isOut ? '' : `<span class="player-info-alternatives">Alts Left: ${alternativesLeft}</span>`;
-
+            // Added player.altsRemaining display
             playerDiv.innerHTML = `
-                <span class="player-info-name">${player.name}</span>
+                <span class="player-info-name">${player.name || 'Unnamed'}</span>
                 <span class="player-info-shots">Shots: ${player.shotsTaken}</span>
+                <span class="player-info-alts">Alts Left: ${player.altsRemaining}</span> <!-- Display Alts -->
                 ${statusText}
-                ${alternativesDisplay} <!-- Display alternatives left -->
             `;
             playerInfoContainer.appendChild(playerDiv);
         });
+         // console.log("Player info display updated."); // DEBUG
     }
 
     function updateTurnIndicator() {
-        let activePlayerFound = players.some(p => !p.isOut);
-        if (!activePlayerFound && gameActive) {
-            if (!checkGameOver()) { endGame(); }
-            return;
-        }
-
-        let attempts = 0;
-        while (players.length > 0 && players[currentPlayerIndex].isOut && attempts <= players.length * 2) {
-             advancePlayerIndex();
-            attempts++;
-            if (attempts > players.length * 2) {
-                console.error("Infinite loop potential in updateTurnIndicator.");
-                if (gameActive) endGame();
-                return;
-            }
-        }
-        if (players.length === 0 || (players.length > 0 && players[currentPlayerIndex].isOut)) {
-             if (!checkGameOver() && gameActive) {
-                  console.log("No active players left after skipping.");
-                  endGame();
-             }
-             return;
-        }
-
-        turnIndicator.innerHTML = `Current Turn: <span>${players[currentPlayerIndex].name}</span>`;
-        updatePlayerInfo(); // Update highlighting and info display
+        // ... (Keep existing updateTurnIndicator function - ensure updatePlayerInfo() call is present at the end) ...
+        if (!turnIndicator) { console.error("turnIndicator missing"); return; } if (!gameActive || !players || players.length === 0) { turnIndicator.innerHTML = 'Waiting...'; return; }
+        let activeExist = players.some(p => !p.isOut); if (!activeExist) { if (!checkGameOver()) { console.log("UpdateTurnIndicator: No active, ending."); endGame(); } return; }
+        let attempts = 0; while (players[currentPlayerIndex % players.length].isOut && attempts <= players.length) { advancePlayerIndex(); attempts++; if (attempts > players.length) { console.error("Loop in updateTurnIndicator skip"); if (!checkGameOver()) endGame(); return; } }
+        if (players[currentPlayerIndex % players.length].isOut) { if (!checkGameOver()) { console.log("UpdateTurnIndicator: All out after skip"); endGame(); } return; }
+        const currentName = players[currentPlayerIndex].name || 'Unnamed'; turnIndicator.innerHTML = `Current Turn: <span>${currentName}</span>`;
+        updatePlayerInfo(); // Ensure UI update happens after finding correct player
     }
 
 
     // --- Gameplay Functions ---
      function handleTileClick(event) {
-        if (!gameActive) return;
-
-        const tileElement = event.target.closest('.tile');
-        if (!tileElement || tileElement.classList.contains('revealed') || tileElement.classList.contains('reveal-animation')) {
-            return;
-        }
-
-        const tileId = parseInt(tileElement.dataset.tileId);
-        const tile = tiles[tileId];
-
-        tileElement.classList.add('reveal-animation');
-        tileElement.removeEventListener('click', handleTileClick);
-
-        setTimeout(() => {
-            tile.revealed = true;
-            revealedTilesCount++;
-            tileElement.classList.add('revealed');
-            tileElement.innerHTML = `<span>${tile.action}</span>`;
-            actionDisplay.textContent = `${players[currentPlayerIndex].name} revealed: ${tile.action}`;
-             if (currentRule) {
-                 actionDisplay.textContent += ` | Rule: ${currentRule}`;
-             }
-
-            const postActionCallback = () => {
-                 const maxShotsReached = checkMaxShots();
-                 if(maxShotsReached) updatePlayerInfo(); // Update display if someone got out
-
-                 if (checkGameOver()) {
-                     endGame();
-                 } else {
-                     setTimeout(nextTurn, 750); // Advance turn after delay
-                 }
-            };
-
-            processAction(tile.action, currentPlayerIndex, postActionCallback);
-
-        }, 300);
+        // ... (Keep existing handleTileClick function - no changes needed here) ...
+         if (!gameActive) return; const tileEl = event.target.closest('.tile'); if (!tileEl || tileEl.classList.contains('revealed') || tileEl.classList.contains('reveal-animation')) return;
+         const tileId = parseInt(tileEl.dataset.tileId); const tile = tiles.find(t => t.id === tileId); if (!tile || tile.revealed) return; console.log(`Tile ${tileId + 1} clicked`);
+         tileEl.classList.add('reveal-animation'); tileEl.removeEventListener('click', handleTileClick);
+         setTimeout(() => { tile.revealed = true; revealedTilesCount++; tileEl.classList.add('revealed'); tileEl.innerHTML = `<span>${tile.action}</span>`; console.log(`Tile ${tileId+1} action: ${tile.action}`);
+             let actionTxt = `${players[currentPlayerIndex].name} revealed: ${tile.action}`; if (currentRule) actionTxt += ` | Rule: ${currentRule}`; if(actionDisplay) actionDisplay.textContent = actionTxt;
+             const postActionCb = () => { console.log("PostActionCb for tile:", tileId); const maxReached = checkMaxShots(); if(maxReached) updatePlayerInfo(); if (checkGameOver()) { console.log("Game over in PostActionCb"); endGame(); } else { console.log("Scheduling next turn"); setTimeout(nextTurn, 750); } };
+             processAction(tile.action, currentPlayerIndex, postActionCb);
+         }, 300);
     }
-
 
     function processAction(action, playerIndex, turnCallback) {
-        console.log(`Processing action: "${action}" for player ${players[playerIndex].name}`);
-        const currentPlayer = players[playerIndex];
-        let turnShouldAdvanceImmediately = true;
-        let shotsToGive = 0;
-        let targetPlayerIndex = -1;
-
-        const getNextActivePlayerIndex = (startIndex, direction) => {
-             let nextIndex = startIndex;
-             let attempts = 0;
-             const numPlayers = players.length;
-             if (numPlayers <= 1) return -1;
-
-             do {
-                  const step = direction === 'left' ? -1 : 1;
-                  nextIndex = (nextIndex + step + numPlayers) % numPlayers;
-                  attempts++;
-                  if (nextIndex === startIndex && attempts > numPlayers) break;
-             } while (players[nextIndex].isOut && attempts < numPlayers * 2);
-
-             return (players[nextIndex].isOut || attempts >= numPlayers * 2) ? -1 : nextIndex;
-        };
-
-
+        // ... (Keep existing processAction function - no changes needed here) ...
+        console.log(`Processing action: "${action}"`); const current = players[playerIndex]; let advance = true; let shots = 0; let targetIdx = -1;
+        const getNextIdx = (start, dir) => { let next = start; let attempts = 0; const numP = players.length; if (numP <= 1) return -1; do { const step = dir === 'left' ? -1 : 1; next = (next + step + numP) % numP; attempts++; if (next === start && attempts > numP) break; } while (players[next].isOut && attempts < numP * 2); return (players[next].isOut || attempts >= numP * 2) ? -1 : next; };
         switch (action) {
-            // --- Self-inflicted ---
-            case 'Take 1 Shot': giveShots(playerIndex, 1, '', turnCallback); turnShouldAdvanceImmediately = false; break;
-            case 'Take 2 Shots': giveShots(playerIndex, 2, '', turnCallback); turnShouldAdvanceImmediately = false; break;
-            case 'Take 3 Shots': giveShots(playerIndex, 3, '', turnCallback); turnShouldAdvanceImmediately = false; break;
-
-            // --- Positional ---
-            case 'Person to your Left takes 1 shot':
-                 targetPlayerIndex = getNextActivePlayerIndex(playerIndex, playOrderReversed ? 'right' : 'left');
-                 if (targetPlayerIndex !== -1) {
-                     giveShots(targetPlayerIndex, 1, ` (from ${currentPlayer.name})`, turnCallback);
-                     turnShouldAdvanceImmediately = false;
-                 } else {
-                      actionDisplay.textContent += ` (No one active to the left!)`;
-                 }
-                 break;
-            case 'Person to your Right takes 1 shot':
-                 targetPlayerIndex = getNextActivePlayerIndex(playerIndex, playOrderReversed ? 'left' : 'right');
-                 if (targetPlayerIndex !== -1) {
-                     giveShots(targetPlayerIndex, 1, ` (from ${currentPlayer.name})`, turnCallback);
-                     turnShouldAdvanceImmediately = false;
-                 } else {
-                     actionDisplay.textContent += ` (No one active to the right!)`;
-                 }
-                 break;
-
-            // --- Targeted ---
-            case 'Choose someone to take 1 shot':
-            case 'Choose someone to take 2 shots':
-                 shotsToGive = action.includes('2') ? 2 : 1;
-                 turnShouldAdvanceImmediately = false;
-                 promptPlayerChoice(
-                      playerIndex,
-                      (chosenPlayerId) => { // Success
-                           giveShots(chosenPlayerId, shotsToGive, ` (chosen by ${currentPlayer.name})`, turnCallback);
-                      },
-                      () => { // Failure/Cancel
-                           actionDisplay.textContent += ' (Choice skipped/invalid)';
-                           turnCallback(); // Advance turn if choice failed
-                      },
-                      `Choose player to take ${shotsToGive} shot(s):`
-                 );
-                 break;
-
-            // --- Group Actions ---
-            case 'Social! (Everyone drinks 1)':
-                 actionDisplay.textContent = 'Social! Everyone takes 1 shot!';
-                 players.forEach((p, index) => {
-                      if (!p.isOut) {
-                          if(p.hasImmunity) {
-                              actionDisplay.textContent += ` ${p.name} used immunity (Social).`;
-                              p.hasImmunity = false;
-                          } else {
-                              applyShot(index, 1, ' (Social!)');
-                          }
-                      }
-                 });
-                 updatePlayerInfo(); // Update everyone's info after applying shots/immunity
-                 break; // turnShouldAdvanceImmediately remains true
-
-            // --- Safe / No Effect ---
-            case 'Safe!':
-                 actionDisplay.textContent = `${currentPlayer.name} is Safe! Nothing happens.`;
-                 break;
-
-            // --- Game State Changers ---
-            case 'Reverse Play Order':
-                 playOrderReversed = !playOrderReversed;
-                 actionDisplay.textContent += ` (Play order is now ${playOrderReversed ? 'REVERSED' : 'NORMAL'})`;
-                 break;
-             case 'Skip Your Next Turn':
-                 actionDisplay.textContent += ` (${currentPlayer.name} skips next turn)`;
-                 turnShouldAdvanceImmediately = false;
-                 turnCallback();
-                 setTimeout(nextTurn, 50);
-                 break;
-             case 'Immunity for next shot assigned to you':
-                  if (!currentPlayer.isOut) {
-                      currentPlayer.hasImmunity = true;
-                      actionDisplay.textContent += ` (${currentPlayer.name} gained Immunity!)`;
-                      updatePlayerInfo();
-                  } else {
-                      actionDisplay.textContent += ` (${currentPlayer.name} is out, immunity ignored)`;
-                  }
-                 break;
-
-            // --- Mini-Games / Rule Tiles ---
-            case 'Waterfall (3 seconds)':
-                actionDisplay.textContent += ' - Everyone starts drinking! Current player stops after 3s.';
-                break;
-            case 'Categories (Loser takes 1 shot)':
-                actionDisplay.textContent += ' - Start a round of Categories! (Loser takes 1 shot or does activity)';
-                break;
-            case 'Make a Rule (Lasts until next rule)':
-                 turnShouldAdvanceImmediately = false;
-                 setTimeout(() => {
-                     const newRulePrompt = prompt(`Make a rule! (e.g., 'No first names'). Penalty: 1 Shot/Activity.\nCurrent Rule: ${currentRule || 'None'}`);
-                     if (newRulePrompt && newRulePrompt.trim() !== '') {
-                         currentRule = newRulePrompt.trim();
-                         actionDisplay.textContent = `New Rule by ${currentPlayer.name}: ${currentRule}`;
-                         console.log("Current Rule:", currentRule);
-                     } else {
-                         actionDisplay.textContent += ' (Rule skipped or unchanged)';
-                     }
-                     turnCallback(); // Callback after prompt closes
-                 }, 50);
-                 break;
-
-            default:
-                console.warn(`Action "${action}" needs specific implementation.`);
-                actionDisplay.textContent += ' (Action effect TBD)';
-                break;
+            case 'Take 1 Shot': giveShots(playerIndex, 1, '', turnCallback); advance = false; break; case 'Take 2 Shots': giveShots(playerIndex, 2, '', turnCallback); advance = false; break; case 'Take 3 Shots': giveShots(playerIndex, 3, '', turnCallback); advance = false; break;
+            case 'Person to your Left takes 1 shot': targetIdx = getNextIdx(playerIndex, playOrderReversed?'right':'left'); if(targetIdx!==-1){ giveShots(targetIdx, 1, `(from ${current.name})`, turnCallback); advance=false;} else {if(actionDisplay) actionDisplay.textContent += ' (No one left!)';} break;
+            case 'Person to your Right takes 1 shot': targetIdx = getNextIdx(playerIndex, playOrderReversed?'left':'right'); if(targetIdx!==-1){ giveShots(targetIdx, 1, `(from ${current.name})`, turnCallback); advance=false;} else {if(actionDisplay) actionDisplay.textContent += ' (No one right!)';} break;
+            case 'Choose someone to take 1 shot': case 'Choose someone to take 2 shots': shots = action.includes('2')?2:1; advance=false; promptPlayerChoice(playerIndex, (chosenId)=>{giveShots(chosenId, shots, `(chosen by ${current.name})`, turnCallback);}, ()=>{if(actionDisplay) actionDisplay.textContent+=' (Choice skip)'; turnCallback();}, `Choose for ${shots} shot(s):`); break;
+            case 'Social! (Everyone drinks 1)': if(actionDisplay) actionDisplay.textContent = 'Social! 1 shot!'; let socialMsg=''; players.forEach((p, i)=>{if(!p.isOut){ if(p.hasImmunity){ socialMsg+=` ${p.name} immune.`; p.hasImmunity=false; } else { applyShot(i, 1, '(Social!)'); socialMsg+=` ${p.name} drank.`;}}}); console.log("Social:", socialMsg); updatePlayerInfo(); break;
+            case 'Safe!': if(actionDisplay) actionDisplay.textContent = `${current.name} Safe!`; break;
+            case 'Reverse Play Order': playOrderReversed=!playOrderReversed; if(actionDisplay) actionDisplay.textContent += ` (Order ${playOrderReversed?'REVERSED':'NORMAL'})`; break;
+            case 'Skip Your Next Turn': if(actionDisplay) actionDisplay.textContent += ` (${current.name} skips)`; advance=false; turnCallback(); setTimeout(nextTurn, 50); break;
+            case 'Immunity for next shot assigned to you': if (!current.isOut) { current.hasImmunity=true; if(actionDisplay) actionDisplay.textContent+=` (${current.name} immune!)`; updatePlayerInfo();} else {if(actionDisplay) actionDisplay.textContent+=` (${current.name} out)`;} break;
+            case 'Waterfall (3 seconds)': if(actionDisplay) actionDisplay.textContent += ' - Waterfall!'; break; case 'Categories (Loser takes 1 shot)': if(actionDisplay) actionDisplay.textContent += ' - Categories!'; break;
+            case 'Make a Rule (Lasts until next rule)': advance=false; setTimeout(()=>{ const rule = prompt(`Rule? Penalty: 1 Shot/Activity.\nCurrent: ${currentRule||'None'}`); if(rule&&rule.trim()!==''){ currentRule=rule.trim(); if(actionDisplay) actionDisplay.textContent=`${current.name}: Make Rule. New: ${currentRule}`; console.log("Rule:", currentRule); } else { if(actionDisplay) actionDisplay.textContent+=' (Rule skip)';} turnCallback(); }, 50); break;
+            default: console.warn(`Unhandled: "${action}"`); if(actionDisplay) actionDisplay.textContent+=' (TBD)'; break;
         }
-
-        if (turnShouldAdvanceImmediately) {
-            turnCallback();
-        }
+        if(advance){ turnCallback(); }
     }
 
-    // Helper to apply shot effects
     function applyShot(playerIndex, numShots, reason = '') {
-         const targetPlayer = players[playerIndex];
-         if (!targetPlayer || targetPlayer.isOut) return;
-
-         targetPlayer.shotsTaken += numShots;
-         console.log(`${targetPlayer.name} takes ${numShots} shot(s)${reason}. Total: ${targetPlayer.shotsTaken}`);
+        // ... (Keep existing applyShot function - no changes needed here) ...
+        if (playerIndex<0 || playerIndex>=players.length) return; const target=players[playerIndex]; if(!target || target.isOut) return; target.shotsTaken+=numShots; console.log(`${target.name} takes ${numShots} shot(s)${reason}. Total: ${target.shotsTaken}`);
     }
 
-    // Offers choice between shot and activity via modal, respects alternative limit
+    // Modified giveShots to check and decrement altsRemaining
     function giveShots(playerIndex, numShots, reason = '', turnCallback) {
-        if (playerIndex < 0 || playerIndex >= players.length) {
-            console.error("Invalid playerIndex in giveShots:", playerIndex);
-            if (turnCallback) turnCallback();
-            return;
-        }
-
+        if (playerIndex < 0 || playerIndex >= players.length) { if (turnCallback) turnCallback(); return; }
         const targetPlayer = players[playerIndex];
 
         if (targetPlayer.isOut) {
-            console.log(`${targetPlayer.name} is out, shots ignored.`);
-            actionDisplay.textContent += ` (${targetPlayer.name} is out, shots ignored${reason})`;
-            if (turnCallback) turnCallback();
-            return;
+            if(actionDisplay) actionDisplay.textContent += ` (${targetPlayer.name} is out)`;
+            if (turnCallback) turnCallback(); return;
         }
 
-        if (numShots <= 0 || alternativeActivities.length === 0) {
-             if (numShots > 0 && targetPlayer.hasImmunity) {
-                  actionDisplay.textContent = `${targetPlayer.name} used Immunity! Shots blocked${reason}.`;
-                  targetPlayer.hasImmunity = false;
-             } else if (numShots > 0) {
-                 applyShot(playerIndex, numShots, reason);
-                 actionDisplay.textContent += ` - ${targetPlayer.name} takes ${numShots} shot(s)${reason}.`;
+        // Check if choice should be offered (shots>0, alts exist, activities exist)
+        const canChooseAlt = numShots > 0 && targetPlayer.altsRemaining > 0 && alternativeActivities.length > 0;
+
+        // If no choice is possible (0 shots, 0 alts left, or no activities defined), apply shot directly (checking immunity)
+        if (!canChooseAlt && numShots > 0) {
+             let message = '';
+             if (targetPlayer.hasImmunity) {
+                  message = ` ${targetPlayer.name} used Immunity! Shots blocked${reason}.`; // Prepend space
+                  targetPlayer.hasImmunity = false; // Consume immunity
+             } else {
+                 applyShot(playerIndex, numShots, reason); // Apply if positive shots and no immunity
+                 message = ` - ${targetPlayer.name} must take ${numShots} shot(s)${reason}.`; // Adjusted message
              }
-             updatePlayerInfo();
+             if (message && actionDisplay) actionDisplay.textContent += message;
+             updatePlayerInfo(); // Update UI after potential immunity change
+             if (turnCallback) turnCallback(); // Proceed turn via callback
+             return;
+        } else if (numShots <= 0) { // Handle case of 0 shots explicitly
+             // No action needed, just advance turn
              if (turnCallback) turnCallback();
              return;
         }
 
-        // --- Offer Choice Via Modal ---
-        activeTurnCallback = turnCallback;
-        const alternativesRemaining = 3 - targetPlayer.alternativesUsed;
 
-        modalText.textContent = `${targetPlayer.name}, you are assigned ${numShots} shot(s)${reason}. Choose an option: (Alternatives left: ${alternativesRemaining})`;
-        modalOptions.innerHTML = '';
+        // --- Offer Choice Via Choice Modal ---
+        activeTurnCallback = turnCallback; // Store callback for modal buttons
 
-        // Option 1: Take Shot(s)
+        if(modalText) modalText.textContent = `${targetPlayer.name}, you are assigned ${numShots} shot(s)${reason}. Choose an option:`;
+        if(modalOptions) modalOptions.innerHTML = '';
+
+        // Option 1: Take Shot(s) Button (Always available if shots > 0)
         const takeShotBtn = document.createElement('button');
         takeShotBtn.textContent = `Take ${numShots} Shot(s)`;
         takeShotBtn.onclick = () => {
-            hideModal();
+            hideChoiceModal();
+            let message = '';
             if (targetPlayer.hasImmunity) {
-                 actionDisplay.textContent = `${targetPlayer.name} used Immunity! Shots blocked${reason}.`;
-                 targetPlayer.hasImmunity = false;
+                 message = ` ${targetPlayer.name} used Immunity! Shots blocked${reason}.`; // Prepend space
+                 targetPlayer.hasImmunity = false; // Consume immunity
             } else {
-                applyShot(playerIndex, numShots, reason);
-                actionDisplay.textContent += ` - ${targetPlayer.name} took ${numShots} shot(s)${reason}.`;
+                applyShot(playerIndex, numShots, reason); // Apply the shot state change
+                message = ` - ${targetPlayer.name} took ${numShots} shot(s)${reason}.`;
             }
-            updatePlayerInfo();
-            if (activeTurnCallback) activeTurnCallback();
+             if (message && actionDisplay) actionDisplay.textContent += message; // Append result
+            updatePlayerInfo(); // Update UI
+
+            if (activeTurnCallback) activeTurnCallback(); // Resolve turn
             activeTurnCallback = null;
         };
-        modalOptions.appendChild(takeShotBtn);
+        if(modalOptions) modalOptions.appendChild(takeShotBtn);
 
-        // Option 2: Do Activity
-        const doActivityBtn = document.createElement('button');
-        doActivityBtn.textContent = 'Do an Activity Instead';
-        doActivityBtn.style.backgroundColor = 'var(--accent-secondary)';
-
-        if (alternativesRemaining <= 0) {
-            doActivityBtn.disabled = true;
-            doActivityBtn.textContent = 'No Alternatives Left';
-            doActivityBtn.style.opacity = 0.6;
-            doActivityBtn.style.backgroundColor = 'grey';
-        } else {
+        // Option 2: Do Activity Button (Only if canChooseAlt is true)
+        if (canChooseAlt) {
+            const doActivityBtn = document.createElement('button');
+            doActivityBtn.textContent = `Do Activity (${targetPlayer.altsRemaining} left)`; // Show count on button
+            doActivityBtn.style.backgroundColor = 'var(--accent-secondary)';
             doActivityBtn.onclick = () => {
-                // Double check limit just before using
-                if (targetPlayer.alternativesUsed >= 3) {
-                     hideModal();
-                     alert("You are out of alternative actions!");
-                     // Force the shot
-                     if (targetPlayer.hasImmunity) {
-                         actionDisplay.textContent = `${targetPlayer.name} used Immunity! Shots blocked${reason}.`;
-                         targetPlayer.hasImmunity = false;
-                     } else {
-                         applyShot(playerIndex, numShots, reason);
-                         actionDisplay.textContent += ` - ${targetPlayer.name} was forced to take ${numShots} shot(s) (Out of alternatives)${reason}.`;
-                     }
-                     updatePlayerInfo();
-                     if (activeTurnCallback) activeTurnCallback();
-                     activeTurnCallback = null;
-                     return;
-                }
-
-                // Proceed with activity
-                hideModal();
-                targetPlayer.alternativesUsed++; // Increment counter
-
+                hideChoiceModal();
+                targetPlayer.altsRemaining--; // Decrement alts count ****
                 const activityIndex = Math.floor(Math.random() * alternativeActivities.length);
                 const chosenActivity = alternativeActivities[activityIndex];
-                const newAlternativesRemaining = 3 - targetPlayer.alternativesUsed;
+                if(actionDisplay) {
+                    actionDisplay.textContent = `${targetPlayer.name} opted out (${targetPlayer.altsRemaining} alts left) and must: ${chosenActivity}`; // Update display with new count
+                    if (currentRule) actionDisplay.textContent += ` | Rule: ${currentRule}`;
+                }
+                console.log(`${targetPlayer.name} chose activity, ${targetPlayer.altsRemaining} alts left.`); // DEBUG
+                updatePlayerInfo(); // Update UI to show decremented count ****
 
-                actionDisplay.textContent = `${targetPlayer.name} opted out and must: ${chosenActivity} (Alternatives left: ${newAlternativesRemaining})`;
-                 if (currentRule) { actionDisplay.textContent += ` | Rule: ${currentRule}`; }
-
-                console.log(`${targetPlayer.name} chose activity: ${chosenActivity}. Alternatives used: ${targetPlayer.alternativesUsed}`);
-                updatePlayerInfo(); // Update display including alternatives left
-                if (activeTurnCallback) activeTurnCallback();
+                if (activeTurnCallback) activeTurnCallback(); // Resolve turn
                 activeTurnCallback = null;
             };
+            if(modalOptions) modalOptions.appendChild(doActivityBtn);
+        } else if (numShots > 0) {
+            // If shots > 0 but cannot choose alt, maybe add text saying why
+             if(modalText) modalText.textContent += ` (No alternatives remaining!)`;
         }
-        modalOptions.appendChild(doActivityBtn);
 
-        showModal();
+
+        showChoiceModal(); // Show the modal
     }
 
-    // Prompts current player to choose another player via modal
-    function promptPlayerChoice(chooserIndex, successCallback, failureCallback, promptText) {
-        const availablePlayers = players.filter((p, index) => index !== chooserIndex && !p.isOut);
 
-        if (availablePlayers.length === 0) {
-            actionDisplay.textContent += ` (No other active players to choose!)`;
-            if (failureCallback) failureCallback();
-            return;
-        }
-
-        activeTurnCallback = failureCallback;
-
-        modalText.textContent = `${players[chooserIndex].name}, ${promptText}`;
-        modalOptions.innerHTML = '';
-
-        availablePlayers.forEach(p => {
-            const btn = document.createElement('button');
-            btn.textContent = p.name;
-            btn.onclick = () => {
-                hideModal();
-                activeTurnCallback = null;
-                if (successCallback) successCallback(p.id);
-            };
-            modalOptions.appendChild(btn);
-        });
-
-        // Add a Cancel button
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Cancel / Skip Choice';
-        cancelBtn.style.backgroundColor = 'var(--accent-warn)';
-        cancelBtn.onclick = () => {
-             hideModal();
-             const cb = activeTurnCallback;
-             activeTurnCallback = null;
-             if (cb) cb();
-        }
-        modalOptions.appendChild(cancelBtn);
-
-        showModal();
+    function promptPlayerChoice(chooserIdx, successCb, failureCb, promptTxt) {
+        // ... (Keep existing promptPlayerChoice function - no changes needed here) ...
+        const available=players.filter((p,i)=> i!==chooserIdx && !p.isOut); if(available.length===0){ if(actionDisplay) actionDisplay.textContent+=' (No one else!)'; if(failureCb) failureCb(); return; }
+        activeTurnCallback=failureCb; if(modalText) modalText.textContent=`${players[chooserIdx].name}, ${promptTxt}`; if(modalOptions) modalOptions.innerHTML='';
+        available.forEach(p=>{ const btn=document.createElement('button'); btn.textContent=p.name; btn.onclick=()=>{ hideChoiceModal(); activeTurnCallback=null; if(successCb) successCb(p.id); }; if(modalOptions) modalOptions.appendChild(btn); });
+        const btnCancel=document.createElement('button'); btnCancel.textContent='Cancel'; btnCancel.style.backgroundColor='var(--accent-warn)'; btnCancel.onclick=()=>{ hideChoiceModal(); const cb=activeTurnCallback; activeTurnCallback=null; if(cb) cb(); }; if(modalOptions) modalOptions.appendChild(btnCancel);
+        showChoiceModal();
     }
 
-    // Checks if any player reached max shots and marks them out
     function checkMaxShots() {
-        if (maxShots <= 0) return false;
-
-        let someoneGotOut = false;
-        players.forEach(player => {
-            if (!player.isOut && player.shotsTaken >= maxShots) {
-                player.isOut = true;
-                someoneGotOut = true;
-                const outMsg = ` *** ${player.name} reached ${maxShots} shots and is OUT! ***`;
-                 if (!actionDisplay.textContent.includes(outMsg)) {
-                      actionDisplay.textContent += outMsg;
-                 }
-                console.log(`${player.name} is OUT!`);
-            }
-        });
-        return someoneGotOut; // Return true if someone was marked out in this check
+        // ... (Keep existing checkMaxShots function - no changes needed here) ...
+        if(maxShots<=0) return false; let out=false; players.forEach(p=>{ if(!p.isOut && p.shotsTaken>=maxShots){ p.isOut=true; out=true; const msg=` *** ${p.name} OUT! ***`; if(actionDisplay && !actionDisplay.textContent.includes(msg)) actionDisplay.textContent+=msg; console.log(`${p.name} OUT!`);}}); return out;
     }
 
-    // Advances player index respecting direction and wrapping
     function advancePlayerIndex() {
-         if (players.length === 0) return;
-         const step = playOrderReversed ? -1 : 1;
-         currentPlayerIndex = (currentPlayerIndex + step + players.length) % players.length;
+        // ... (Keep existing advancePlayerIndex function - no changes needed here) ...
+        if(!players || players.length===0) return; const step=playOrderReversed?-1:1; currentPlayerIndex=(currentPlayerIndex+step+players.length)%players.length;
     }
 
-    // Moves game to the next turn
     function nextTurn() {
-         if (!gameActive) return;
-
-         advancePlayerIndex();
-         updateTurnIndicator(); // Skips out players and updates display
-
-         if (currentRule && players[currentPlayerIndex] && !players[currentPlayerIndex].isOut) { // Added checks
-             if (!actionDisplay.textContent.includes(`Rule: ${currentRule}`)) {
-                  actionDisplay.textContent += ` | Rule: ${currentRule}`;
-             }
-         }
-     }
-
-    // Checks conditions for game end
-    function checkGameOver() {
-        if (!gameActive) return true;
-
-        if (revealedTilesCount >= totalTiles) {
-            console.log("Game Over: All tiles revealed.");
-            return true;
-        }
-
-        const activePlayersCount = players.filter(p => !p.isOut).length;
-        if (players.length > 1 && activePlayersCount <= 1) {
-             console.log(`Game Over: ${activePlayersCount} active players remaining.`);
-             return true;
-        }
-
-        return false;
+        // ... (Keep existing nextTurn function - no changes needed here) ...
+        if (!gameActive) return; console.log("Advancing turn..."); advancePlayerIndex(); updateTurnIndicator();
     }
 
-    // --- End Game Functions ---
+    function checkGameOver() {
+        // ... (Keep existing checkGameOver function - no changes needed here) ...
+        if(!gameActive) return true; if(revealedTilesCount>=totalTiles){ console.log("Game Over: Tiles ended."); return true; } const activeCount=players.filter(p=>!p.isOut).length; if(players.length>1 && activeCount<=1){ console.log(`Game Over: ${activeCount} active.`); return true; } return false;
+    }
+
+    // Modified endGame to include altsRemaining in results
     function endGame() {
-        if (!gameActive) return;
-        gameActive = false;
-        console.log("Game Over!");
-        hideModal();
-
-        const activePlayers = players.filter(p => !p.isOut);
-        let resultTitle = '';
-        let finalScoresHTML = '<h3>Final Scores:</h3>';
-
-        if (players.length > 1 && activePlayers.length === 1) {
-            resultTitle = `<h2><span>${activePlayers[0].name}</span> is the winner!</h2><p>(Last one standing)</p>`;
-        } else if (activePlayers.length === 0 && players.length > 0) {
-            resultTitle = `<h2>Everyone is out!</h2><p>No winner this time.</p>`;
-        } else {
-            let potentialWinners = activePlayers.length > 0 ? activePlayers : players;
-            potentialWinners.sort((a, b) => a.shotsTaken - b.shotsTaken);
-
-             if (potentialWinners.length > 0) {
-                  const minShots = potentialWinners[0].shotsTaken;
-                  const winners = potentialWinners.filter(p => p.shotsTaken === minShots);
-
-                  if (winners.length === 1) {
-                      resultTitle = `<h2><span>${winners[0].name}</span> wins!</h2><p>(Fewest shots: ${minShots})</p>`;
-                  } else if (winners.length > 1) {
-                      resultTitle = `<h2>It's a tie!</h2><p>Between <span>${winners.map(p => p.name).join('</span> and <span>')}</span> (${minShots} shots each)</p>`;
-                  } else {
-                       resultTitle = `<h2>Game Finished!</h2>`;
-                  }
-             } else {
-                   resultTitle = `<h2>Game Finished!</h2>`;
-             }
-        }
-
-        players.sort((a, b) => a.shotsTaken - b.shotsTaken); // Sort for final display
+        if (!gameActive && !gameOverScreen.classList.contains('active')) { return; }
+        console.log("Ending Game!"); gameActive = false; hideChoiceModal(); hideRulesModal();
+        const active = players.filter(p => !p.isOut); let title = ''; let scores = '<h3>Final Scores:</h3>';
+        if (players.length > 1 && active.length === 1) { title = `<h2><span>${active[0].name}</span> WINS!</h2>`; }
+        else if (players.length > 0 && active.length === 0) { title = `<h2>Everyone is out!</h2>`; }
+        else { let potential = active.length > 0 ? active : players; potential.sort((a, b) => a.shotsTaken - b.shotsTaken);
+             if (potential.length > 0) { const min = potential[0].shotsTaken; const winners = potential.filter(p => p.shotsTaken === min);
+                  if (winners.length === 1) { title = `<h2><span>${winners[0].name}</span> wins! (${min} shots)</h2>`; }
+                  else if (winners.length > 1) { title = `<h2>Tie! <span>${winners.map(p => p.name).join(' & ')}</span> (${min} shots)</h2>`; }
+                  else { title = `<h2>Game Finished!</h2>`; }
+             } else { title = `<h2>Game Finished!</h2>`; } }
+        players.sort((a, b) => a.shotsTaken - b.shotsTaken);
+        // Add alts remaining to the results display
         players.forEach(p => {
-            // Also display alternatives used in final score? Optional.
-            const altsUsedText = `(Alts Used: ${p.alternativesUsed})`;
-            finalScoresHTML += `<p>${p.name}: ${p.shotsTaken} shots ${p.isOut ? '<span class="player-info-status out">(OUT)</span>' : altsUsedText}</p>`;
+            scores += `<p>${p.name||'?'}: ${p.shotsTaken} shots ${p.isOut ? '<span class="player-info-status out">(OUT)</span>' : ''} <span class="alts-left-results">(${p.altsRemaining} alts left)</span></p>`;
         });
-
-        resultsDiv.innerHTML = resultTitle + finalScoresHTML;
-
-        gameScreen.classList.remove('active');
-        gameOverScreen.classList.add('active');
+        if(resultsDiv) resultsDiv.innerHTML = title + scores;
+        if(gameScreen) gameScreen.classList.remove('active'); if(setupScreen) setupScreen.classList.remove('active'); if(gameOverScreen) gameOverScreen.classList.add('active');
+        console.log("Game over screen up.");
     }
 
     // --- Modal Helper Functions ---
-    function showModal() {
-         if (modal) modal.style.display = 'block';
-    }
-
-    function hideModal() {
-         if (modal) modal.style.display = 'none';
-         if (modalOptions) modalOptions.innerHTML = '';
-         if (modalText) modalText.textContent = '';
-         // activeTurnCallback is cleared by button clicks / close logic
-    }
+    // ... (Keep existing modal functions - no changes needed here) ...
+    function showChoiceModal() { if (choiceModal) choiceModal.style.display = 'block'; }
+    function hideChoiceModal() { if (choiceModal) choiceModal.style.display = 'none'; if (modalOptions) modalOptions.innerHTML = ''; if (modalText) modalText.textContent = ''; }
+    function showRulesModal() { if(rulesModal) rulesModal.style.display = 'block'; const rc = document.getElementById('rules-content'); if (rc) rc.scrollTop = 0; }
+    function hideRulesModal() { if(rulesModal) rulesModal.style.display = 'none'; }
 
 }); // End of DOMContentLoaded
