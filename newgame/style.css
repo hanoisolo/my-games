@@ -92,11 +92,13 @@ small {
 
 #setup-screen label {
     flex-basis: 200px; /* Fixed width for labels */
+    flex-shrink: 0; /* Prevent label from shrinking */
     text-align: right;
     margin-right: 10px;
     align-self: center; /* Vertically center label with input/stepper */
 }
 
+/* General styling for number/text inputs in setup */
 #setup-screen input[type="number"],
 #setup-screen input[type="text"] {
     padding: 10px 12px;
@@ -111,524 +113,278 @@ small {
 }
 
 /* Style for the read-only player count input within stepper */
-#setup-screen .number-input-stepper input[type="number"] {
+#setup-screen .number-input-stepper input[type="number"]#player-count {
     text-align: center;
     font-weight: bold;
     width: 50px; /* Fixed width for the number display */
     padding: 10px 5px; /* Adjust padding */
-    /* Remove browser default spinners */
-    -webkit-appearance: none;
-    margin: 0;
-    -moz-appearance: textfield;
+    -webkit-appearance: none; margin: 0; -moz-appearance: textfield; /* Remove spinners */
     background-color: var(--bg-medium); /* Make it look less like an active input */
     border: 1px solid var(--bg-dark);
     flex-grow: 0; /* Don't allow it to grow */
 }
 
-
-#player-names-container input[type="text"] {
-     max-width: 300px; /* Wider for names */
+/* Max shots & Initial Alts inputs specific width */
+#setup-screen input#max-shots,
+#setup-screen input#initial-alts {
+    max-width: 100px; /* Make these inputs smaller */
+    flex-grow: 0; /* Prevent growing */
 }
-/* Make player name inputs stack nicely */
+
+
+/* Container for dynamically added player names */
 #player-names-container {
      display: flex;
      flex-direction: column;
-     gap: 10px; /* Space between name inputs */
-     align-items: flex-start; /* Align items to the start */
-     width: 100%; /* Take full width */
+     gap: 10px; /* Space between name input rows */
+     width: 100%; /* Take full width within its parent */
+     margin-bottom: 20px; /* Consistent margin */
 }
-#player-names-container input {
-    margin-left: 210px; /* Align with other inputs (label width + gap) */
-    width: calc(100% - 210px); /* Adjust width */
-    max-width: 300px; /* Keep max width */
+/* Wrapper for each Label + Input pair */
+#player-names-container > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%; /* Make wrapper take full width if needed */
 }
-/* Add Player 1, Player 2 labels before the name inputs */
+
+/* Style the labels within the dynamic container */
 #player-names-container label.player-label {
-    flex-basis: 200px;
+    flex-basis: 200px; /* Match other labels */
+    flex-shrink: 0;
     text-align: right;
     margin-right: 10px;
     font-weight: bold;
     color: var(--text-light);
+    align-self: center;
 }
+/* Style the input fields within the dynamic container */
+#player-names-container input[type="text"] {
+    padding: 10px 12px;
+    border: 1px solid #7f8c8d;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 1em;
+    max-width: 300px; /* Wider for names */
+    flex-grow: 1; /* Allow input to grow */
+    width: auto; /* Let flexbox determine width */
+    /* margin-left: 210px; /* Remove fixed margin, rely on flex gap */
+}
+
 
 /* --- Input Stepper Styles --- */
 .number-input-stepper {
     display: flex;
     align-items: center;
     gap: 5px; /* Space between buttons and input */
-    flex-grow: 1; /* Allow stepper to take available space */
-    max-width: 180px; /* Adjust as needed, smaller width */
-    justify-content: center; /* Center items within the stepper */
+    flex-grow: 0; /* Do not allow the stepper itself to grow */
+    justify-content: flex-start; /* Align items to start (usually left) */
 }
 
 .stepper-btn {
     background-color: var(--accent-primary);
-    color: white;
-    border: none;
-    padding: 8px 12px; /* Good touch target size */
-    font-size: 1.1em; /* Make arrows slightly bigger */
-    line-height: 1;
-    border-radius: 6px;
-    cursor: pointer;
+    color: white; border: none; padding: 8px 12px; font-size: 1.1em;
+    line-height: 1; border-radius: 6px; cursor: pointer;
     transition: background-color 0.2s ease, opacity 0.2s ease;
-    font-weight: bold;
-    appearance: none;
-    margin: 0;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    min-width: 40px; /* Ensure minimum width */
+    font-weight: bold; appearance: none; margin: 0; display: inline-flex;
+    justify-content: center; align-items: center; min-width: 40px;
 }
-
-.stepper-btn:hover {
-    background-color: var(--accent-secondary);
-}
-
-.stepper-btn:disabled {
-     background-color: var(--bg-medium);
-     color: var(--tile-revealed-bg);
-     cursor: not-allowed;
-     opacity: 0.6;
-}
+.stepper-btn:hover { background-color: var(--accent-secondary); }
+.stepper-btn:disabled { background-color: var(--bg-medium); color: var(--tile-revealed-bg); cursor: not-allowed; opacity: 0.6; }
 
 
 /* --- Button Styles --- */
-button:not(.stepper-btn):not(.close-btn) { /* Exclude stepper/close buttons from general styling */
-    background-color: var(--accent-primary);
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 25px; /* Rounded corners */
-    cursor: pointer;
-    font-size: 1.1em;
-    font-family: var(--font-headings);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+/* General Buttons (Start Game, Play Again) */
+button#start-game-btn, button#play-again-btn {
+    background-color: var(--accent-primary); color: white; padding: 12px 25px; border: none;
+    border-radius: 25px; cursor: pointer; font-size: 1.1em; font-family: var(--font-headings);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-    display: block; /* Make button block level */
-    margin: 25px auto 10px auto; /* Center button */
-    box-shadow: var(--shadow-light);
+    display: block; margin: 25px auto 10px auto; box-shadow: var(--shadow-light);
 }
-button:not(.stepper-btn):not(.close-btn):hover {
-    background-color: var(--accent-secondary);
-    transform: translateY(-2px); /* Slight lift on hover */
-    box-shadow: var(--shadow-medium);
-}
-button:not(.stepper-btn):not(.close-btn):active {
-    transform: translateY(0px); /* Press down effect */
-    box-shadow: var(--shadow-light);
-}
+button#start-game-btn:hover, button#play-again-btn:hover {
+    background-color: var(--accent-secondary); transform: translateY(-2px); box-shadow: var(--shadow-medium); }
+button#start-game-btn:active, button#play-again-btn:active { transform: translateY(0px); box-shadow: var(--shadow-light); }
+#play-again-btn { background-color: var(--accent-warn); }
+#play-again-btn:hover { background-color: #c0392b; }
 
-#play-again-btn {
-    background-color: var(--accent-warn);
+/* Secondary Button (How to Play) */
+.secondary-btn {
+    background-color: var(--bg-medium); color: var(--text-light); border: 2px solid var(--accent-primary);
+    padding: 10px 20px; border-radius: 25px; cursor: pointer; font-size: 1em;
+    font-family: var(--font-headings); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    display: block; margin: 15px auto 10px auto; box-shadow: none;
 }
-#play-again-btn:hover {
-    background-color: #c0392b; /* Darker Red */
-}
+.secondary-btn:hover { background-color: var(--accent-primary); color: white; transform: translateY(-1px); }
 
 
 /* --- Game Screen Styles --- */
 #turn-indicator {
-    font-size: 1.6em;
-    font-weight: 700;
-    margin-bottom: 25px;
-    color: var(--text-light);
-    text-align: center;
-    padding: 10px;
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 8px;
+    font-size: 1.6em; font-weight: 700; margin-bottom: 25px; color: var(--text-light);
+    text-align: center; padding: 10px; background-color: rgba(0,0,0,0.1); border-radius: 8px;
 }
-#turn-indicator span { /* For highlighting player name */
-     color: var(--accent-primary);
-     font-weight: 700;
-}
+#turn-indicator span { color: var(--accent-primary); font-weight: 700; }
 
-#player-info-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 30px;
-}
+#player-info-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 30px; }
 
 .player-info {
-    background-color: var(--bg-dark);
-    padding: 12px 18px;
-    border-radius: 8px;
-    border: 1px solid var(--bg-medium);
-    min-width: 150px; /* Ensure some width */
-    text-align: center;
-    box-shadow: var(--shadow-light);
-    transition: all 0.3s ease;
+    background-color: var(--bg-dark); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--bg-medium);
+    min-width: 150px; text-align: center; box-shadow: var(--shadow-light); transition: all 0.3s ease;
 }
-.player-info-name {
-    font-weight: bold;
-    display: block; /* Name on its own line */
-    margin-bottom: 4px;
-    color: var(--text-light);
-}
-.player-info-shots {
-    font-size: 0.9em;
-    color: #bdc3c7; /* Lighter grey */
-}
-.player-info-status {
-    font-size: 0.8em;
-    font-weight: bold;
-    margin-left: 5px;
-}
+.player-info-name { font-weight: bold; display: block; margin-bottom: 4px; color: var(--text-light); }
+.player-info-shots { font-size: 0.9em; color: #bdc3c7; display: block; /* Put on new line */ margin-bottom: 4px;}
+.player-info-alts { font-size: 0.9em; color: var(--accent-info); display: block;} /* Style for Alts Left (NEW) */
+.player-info-status { font-size: 0.8em; font-weight: bold; margin-left: 5px; display: inline; /* Keep status inline */ }
 .player-info-status.immune { color: var(--accent-info); }
 .player-info-status.out { color: var(--accent-warn); }
 
-/* Style for Alternatives Left */
-.player-info-alternatives {
-    display: block; /* Put it on its own line */
-    font-size: 0.8em;
-    color: var(--accent-info); /* Use info color or another distinct one */
-    margin-top: 4px;
-}
-.player-info.player-out .player-info-alternatives {
-    display: none; /* Hide if player is out */
-}
-
 
 .player-info.current-player {
-    background-color: var(--accent-primary);
-    border-color: var(--accent-secondary);
-    transform: scale(1.05); /* Make current player slightly bigger */
+    background-color: var(--accent-primary); border-color: var(--accent-secondary); transform: scale(1.05);
 }
 .player-info.current-player .player-info-name,
 .player-info.current-player .player-info-shots,
-.player-info.current-player .player-info-alternatives { /* Also style alts left */
-    color: white; /* White text on accent background */
-}
+.player-info.current-player .player-info-alts { color: white; } /* Make alts text white too */
+.player-info.current-player .player-info-status.immune { color: #2980b9; } /* Darker blue on teal */
 
-.player-info.player-out {
-    opacity: 0.5;
-    background-color: var(--bg-medium);
-    border-color: var(--bg-dark);
-    text-decoration: line-through;
-}
-.player-info.player-out.current-player { /* Don't highlight if out */
-    transform: none;
-}
+.player-info.player-out { opacity: 0.5; background-color: var(--bg-medium); border-color: var(--bg-dark); }
+.player-info.player-out.current-player { transform: none; background-color: var(--bg-medium); border-color: var(--bg-dark); }
+.player-info.player-out .player-info-name { color: var(--text-light); }
+.player-info.player-out .player-info-shots { color: #bdc3c7; }
+.player-info.player-out .player-info-alts { color: var(--accent-info); } /* Keep alts color consistent when out */
 
 
 /* --- Tile Grid & Tile Styles --- */
 #tile-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive columns */
-    gap: 12px;
-    margin: 20px auto;
-    max-width: 900px; /* Allow grid to be wider */
-    padding: 15px;
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 8px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 12px;
+    margin: 20px auto; max-width: 900px; padding: 15px; background-color: rgba(0,0,0,0.1); border-radius: 8px;
 }
-
 .tile {
-    aspect-ratio: 1 / 1;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); /* Gradient background */
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: var(--font-headings);
-    font-size: 2em; /* Larger tile number */
-    font-weight: 700;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: var(--shadow-light);
-    position: relative; /* Needed for pseudo-elements */
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), /* Elastic scale */
-                box-shadow 0.3s ease;
-    /* Prevent text selection */
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
+    aspect-ratio: 1 / 1; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white; display: flex; justify-content: center; align-items: center; font-family: var(--font-headings);
+    font-size: 2em; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: var(--shadow-light);
+    position: relative; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    user-select: none; -webkit-user-select: none; -moz-user-select: none;
 }
-
-.tile:not(.revealed):hover {
-    transform: scale(1.08); /* Slightly larger pop on hover */
-    box-shadow: var(--shadow-medium);
-}
+.tile:not(.revealed):hover { transform: scale(1.08); box-shadow: var(--shadow-medium); }
 
 /* --- Tile Reveal Animation --- */
 .tile.revealed {
-    cursor: default;
-    transform: rotateY(180deg); /* Flip effect base state */
-    transition: transform 0.6s ease, background-color 0.6s ease, color 0.6s ease; /* Animate flip */
-    background: var(--tile-revealed-bg); /* Revealed color */
-    color: var(--text-light); /* Text color on revealed tile */
-    font-family: var(--font-body);
-    font-size: 0.8em; /* Adjust based on content */
-    font-weight: bold;
-    padding: 8px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); /* Inset shadow */
-    line-height: 1.3;
-    display: flex; /* Ensure flex properties apply */
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    cursor: default; transform: rotateY(180deg); transition: transform 0.6s ease, background-color 0.6s ease, color 0.6s ease;
+    background: var(--tile-revealed-bg); color: var(--text-light); font-family: var(--font-body); font-size: 0.8em;
+    font-weight: bold; padding: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); line-height: 1.3;
+    display: flex; justify-content: center; align-items: center; text-align: center;
 }
-/* Actual flip happens when class is added by JS */
-.tile.reveal-animation {
-    transform: rotateY(180deg);
-}
-/* Text needs to be flipped back */
-.tile.revealed span { /* Assuming action text is wrapped in a span */
-    display: inline-block; /* Needed for transform */
-    transform: rotateY(180deg); /* Flip text back */
-}
-
-.tile.revealed:hover {
-    transform: rotateY(180deg) scale(1.02); /* Slight scale on revealed hover */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-}
+.tile.reveal-animation { transform: rotateY(180deg); }
+.tile.revealed span { display: inline-block; transform: rotateY(180deg); }
+.tile.revealed:hover { transform: rotateY(180deg) scale(1.02); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
 
 
 /* --- Action Display Area --- */
 #action-display {
-    min-height: 50px;
-    margin: 30px auto;
-    padding: 15px 20px;
-    background-color: var(--bg-medium);
-    border: 1px solid var(--accent-primary);
-    border-left-width: 5px; /* Thick left border */
-    border-radius: 6px;
-    font-size: 1.2em;
-    font-weight: normal;
-    color: var(--text-light);
-    text-align: center;
-    max-width: 700px;
-    box-shadow: var(--shadow-light);
+    min-height: 50px; margin: 30px auto; padding: 15px 20px; background-color: var(--bg-medium);
+    border: 1px solid var(--accent-primary); border-left-width: 5px; border-radius: 6px; font-size: 1.2em;
+    font-weight: normal; color: var(--text-light); text-align: center; max-width: 700px; box-shadow: var(--shadow-light);
 }
-
 
 /* --- Game Over Screen Styles --- */
-#game-over-screen {
-     text-align: center;
-}
+#game-over-screen { text-align: center; }
 #results {
-    margin-top: 20px;
-    padding: 20px;
-    background-color: var(--bg-dark); /* Dark background for results */
-    border: 1px solid var(--bg-medium);
-    border-radius: 8px;
-    text-align: left;
-    font-size: 1.1em;
-    box-shadow: var(--shadow-light);
+    margin-top: 20px; padding: 20px; background-color: var(--bg-dark); border: 1px solid var(--bg-medium);
+    border-radius: 8px; text-align: left; font-size: 1.1em; box-shadow: var(--shadow-light);
 }
-#results span { /* Highlight winner names */
-    color: var(--accent-primary);
-    font-weight: bold;
-}
-#results br { /* Improve spacing in results */
-    content: "";
-    display: block;
-    margin-bottom: 0.5em;
-}
-#results .player-info-status.out { /* Style OUT text in results */
-    color: var(--accent-warn);
-    font-size: 0.9em;
-    font-weight: bold;
-    margin-left: 5px;
-}
+#results h3 { color: var(--accent-secondary); text-align: left; margin-bottom: 1em; }
+#results span { color: var(--accent-primary); font-weight: bold; }
+#results p { margin-bottom: 0.6em; line-height: 1.4; }
+#results .player-info-status.out { color: var(--accent-warn); font-size: 0.9em; font-weight: bold; margin-left: 5px; }
+/* Style for showing alts left in results */
+#results .alts-left-results { font-size: 0.85em; color: #bdc3c7; margin-left: 10px; }
 
 
-/* --- Modal Styles (Improved) --- */
+/* --- Modal Styles (General) --- */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
-    animation: fadeInModal 0.3s ease-out;
+    display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+    overflow: auto; background-color: rgba(0, 0, 0, 0.75); animation: fadeInModal 0.3s ease-out;
 }
-
-@keyframes fadeInModal {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
+@keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
 .modal-content {
-    background-color: var(--bg-medium);
-    margin: 10% auto; /* Adjust vertical position */
-    padding: 30px;
-    border: 1px solid var(--accent-primary);
-    width: 90%;
-    max-width: 500px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    position: relative;
-    color: var(--text-light);
-    animation: slideInModal 0.4s ease-out;
+    background-color: var(--bg-medium); margin: 10% auto; padding: 30px; border: 1px solid var(--accent-primary);
+    width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    position: relative; color: var(--text-light); animation: slideInModal 0.4s ease-out;
 }
-
-@keyframes slideInModal {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-
+@keyframes slideInModal { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .close-btn {
-    color: #aaa;
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 32px;
-    font-weight: bold;
-    line-height: 1;
-    padding: 0; /* Reset padding */
-    background: none; /* Reset background */
-    border: none; /* Reset border */
-    cursor: pointer;
+    color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 32px; font-weight: bold;
+    line-height: 1; padding: 0; background: none; border: none; cursor: pointer;
 }
+.close-btn:hover, .close-btn:focus { color: var(--text-light); text-decoration: none; }
 
-.close-btn:hover,
-.close-btn:focus {
-    color: var(--text-light);
-    text-decoration: none;
+/* --- Choice Modal Specifics --- */
+.choice-modal-content #modal-text { margin-bottom: 20px; font-size: 1.2em; text-align: center; }
+.choice-modal-content #modal-options { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.choice-modal-content #modal-options button {
+    width: 80%; margin: 5px 0; padding: 10px 15px; font-size: 1em; background-color: var(--accent-info);
+    color: white; border: none; border-radius: 20px; cursor: pointer; font-family: var(--font-headings);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: background-color 0.2s ease, transform 0.1s ease;
 }
+.choice-modal-content #modal-options button:hover { background-color: #2980b9; transform: translateY(-1px); }
+.choice-modal-content #modal-options button[style*="--accent-secondary"] { background-color: var(--accent-secondary); }
+.choice-modal-content #modal-options button[style*="--accent-secondary"]:hover { background-color: var(--accent-primary); }
+.choice-modal-content #modal-options button[style*="--accent-warn"] { background-color: var(--accent-warn); }
+.choice-modal-content #modal-options button[style*="--accent-warn"]:hover { background-color: #c0392b; }
 
-#modal-text {
-    margin-bottom: 20px;
-    font-size: 1.2em;
-    text-align: center;
-}
 
-#modal-options {
-    display: flex;
-    flex-direction: column; /* Stack buttons vertically */
-    gap: 10px; /* Space between buttons */
-    align-items: center; /* Center buttons */
-}
-
-/* Style buttons inside the modal */
-#modal-options button {
-    width: 80%; /* Make buttons wide */
-    margin: 5px 0; /* Adjust margins */
-    padding: 10px 15px;
-    font-size: 1em;
-    background-color: var(--accent-info); /* Blue for choices */
-    color: white;
-    border: none;
-    border-radius: 20px; /* Match general button style */
-    cursor: pointer;
-    font-family: var(--font-headings);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
-}
-#modal-options button:hover:not(:disabled) { /* Add :not(:disabled) */
-     background-color: #2980b9; /* Darker blue */
-     transform: translateY(-1px);
-}
-/* Style for disabled modal buttons */
-#modal-options button:disabled {
-    background-color: grey;
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
+/* --- Rules Modal Specifics --- */
+.rules-modal-content { max-width: 700px; margin: 5% auto; }
+#rules-content { max-height: 70vh; overflow-y: auto; text-align: left; padding-right: 15px; margin-top: 15px; }
+#rules-content h3 { color: var(--accent-secondary); margin-top: 1.5em; margin-bottom: 0.5em; text-align: left; font-size: 1.3em; border-bottom: 1px solid var(--bg-dark); padding-bottom: 0.3em; }
+#rules-content h3:first-of-type { margin-top: 0.5em; }
+#rules-content p, #rules-content li { margin-bottom: 0.8em; line-height: 1.5; color: var(--text-light); }
+#rules-content ul, #rules-content ol { margin-left: 25px; margin-bottom: 1em; }
+#rules-content ul ul, #rules-content ol ol { margin-left: 20px; margin-bottom: 0.5em; }
+#rules-content strong { color: var(--accent-primary); font-weight: 600; }
+#rules-content code { background-color: var(--bg-dark); padding: 2px 5px; border-radius: 4px; font-family: monospace; color: var(--accent-secondary); }
+#rules-content em { font-style: italic; color: #bdc3c7; }
 
 
 /* --- Responsiveness --- */
 @media (max-width: 768px) {
-    h1 { font-size: 2em; }
-    h2 { font-size: 1.5em; }
-
+    h1 { font-size: 2em; } h2 { font-size: 1.5em; }
     .screen { padding: 20px; }
+    #setup-screen label { flex-basis: 100px; text-align: left; margin-right: 5px; }
+    #setup-screen input[type="number"]:not(#player-count), #setup-screen input[type="text"] { max-width: none; flex-grow: 1; }
+    .number-input-stepper { max-width: 160px; flex-grow: 0; }
+    #setup-screen .number-input-stepper input[type="number"]#player-count { width: 45px; }
+    .stepper-btn { padding: 10px 14px; }
+    #player-names-container label.player-label { flex-basis: 100px; }
+    #player-names-container input[type="text"] { margin-left: 0; /* Remove left margin, let wrapper handle spacing */ max-width: none; }
+    #player-names-container > div { gap: 5px; /* Reduce gap in wrapper */ } /* Adjust gap in player name wrapper */
 
-    #setup-screen label {
-        flex-basis: 100px; /* Shorter label width */
-        text-align: left;
-        margin-right: 5px;
-    }
-    #setup-screen input[type="number"]:not(#player-count), /* Exclude player count from this rule */
-    #setup-screen input[type="text"] {
-         max-width: none; /* Allow full width */
-    }
-    #player-names-container input {
-        margin-left: 105px; /* Adjust based on new label width + gap */
-        width: calc(100% - 105px); /* Adjust width */
-    }
-     #player-names-container label.player-label {
-        flex-basis: 100px; /* Match other labels */
-    }
-
-    .number-input-stepper {
-        max-width: 160px; /* Can be slightly smaller */
-        justify-content: flex-start; /* Align left */
-    }
-    .stepper-btn {
-        padding: 10px 14px; /* Slightly larger touch area */
-    }
-
-
-    #tile-grid {
-        grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); /* Smaller tiles */
-        gap: 8px;
-    }
-    .tile { font-size: 1.5em; }
-    .tile.revealed { font-size: 0.65em; }
-
-    #player-info-container { gap: 10px; }
-    .player-info { min-width: 120px; padding: 8px 12px; }
-
+    #tile-grid { grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); gap: 8px; }
+    .tile { font-size: 1.5em; } .tile.revealed { font-size: 0.65em; }
+    #player-info-container { gap: 10px; } .player-info { min-width: 120px; padding: 8px 12px; }
     .modal-content { margin: 15% auto; width: 90%; padding: 20px; }
-    #modal-options button { width: 90%; }
+    .rules-modal-content { margin: 10% auto; } #rules-content { max-height: 75vh; }
+    .choice-modal-content #modal-options button { width: 90%; }
 }
 
 @media (max-width: 480px) {
-    body { padding: 10px; }
-    .screen { padding: 15px; margin: 15px auto; }
-    h1 { font-size: 1.8em; }
+    body { padding: 10px; } .screen { padding: 15px; margin: 15px auto; } h1 { font-size: 1.8em; }
+    #setup-screen div { flex-direction: column; align-items: stretch; gap: 5px; }
+    #setup-screen label { text-align: left; margin-bottom: 3px; margin-right: 0; flex-basis: auto; width: 100%; }
+    .number-input-stepper { justify-content: flex-start; margin-top: 5px; max-width: none; width: auto; flex-grow: 0; }
+    #player-names-container { align-items: stretch; }
+    #player-names-container > div { flex-direction: column; align-items: stretch; gap: 3px; } /* Stack label/input */
+    #player-names-container label.player-label { display: none; } /* Hide label */
+    #player-names-container input[type="text"] { margin-left: 0; width: 100%; max-width: none; }
+    #setup-screen input#max-shots, #setup-screen input#initial-alts { max-width: 150px; /* Allow slightly wider */ }
 
-    #setup-screen div {
-        flex-direction: column; /* Stack label and input/stepper */
-        align-items: stretch; /* Make children full width */
-        gap: 5px;
-    }
-    #setup-screen label {
-        text-align: left;
-        margin-bottom: 3px;
-        margin-right: 0; /* Remove right margin when stacked */
-        flex-basis: auto; /* Reset basis */
-        width: 100%; /* Take full width */
-    }
-    .number-input-stepper {
-        justify-content: flex-start; /* Align stepper to the start below label */
-        margin-top: 5px; /* Add space below label */
-        max-width: none; /* Allow it to take more width */
-        width: auto; /* Don't force 100% width */
-        flex-grow: 0; /* Don't grow */
-    }
-
-    #player-names-container input {
-        margin-left: 0; /* Remove margin */
-        width: 100%; /* Full width */
-    }
-     #player-names-container label.player-label {
-        display: none; /* Hide separate label on mobile, use placeholder */
-    }
-
-
-    button:not(.stepper-btn):not(.close-btn) { /* General buttons */
-        font-size: 1em;
-        padding: 10px 20px;
-    }
-    #tile-grid {
-        grid-template-columns: repeat(auto-fit, minmax(55px, 1fr)); /* Even smaller */
-        gap: 6px;
-    }
-    .tile { font-size: 1.2em; }
-    #turn-indicator { font-size: 1.3em; }
-    #action-display { font-size: 1em; padding: 10px; }
-    .modal-content { margin: 20% auto; }
+    button#start-game-btn, button#play-again-btn, .secondary-btn { font-size: 1em; padding: 10px 20px; }
+    .secondary-btn { padding: 8px 15px; }
+    #tile-grid { grid-template-columns: repeat(auto-fit, minmax(55px, 1fr)); gap: 6px; }
+    .tile { font-size: 1.2em; } #turn-indicator { font-size: 1.3em; } #action-display { font-size: 1em; padding: 10px; }
+    .modal-content { margin: 20% auto; } .rules-modal-content { margin: 15% auto; }
 }
