@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Geo Quest — Remy's Geography Quiz</title>
+<style>
+:root{
+  --bg:#f2f5f0; --ink:#2c3a32; --muted:#6b7a6f;
+  --card:#ffffff; --line:#dfe5dc;
+  --accent:#3a6ea5; --accent-soft:#dfeaf7;
+  --gold:#c9a227; --gold-soft:#faf3dd;
+  --blue:#5b7fa6; --blue-soft:#e3eaf5;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+#app{max-width:540px;margin:0 auto;min-height:100vh;padding:20px 16px 60px}
+.hidden{display:none !important}
+h1{font-size:2rem;margin:.2em 0 .1em;text-align:center}
+.tag{text-align:center;color:var(--muted);margin:0 0 1.2em}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.child-card{background:var(--card);border:2px solid var(--accent);border-radius:18px;padding:18px;margin:0 0 1em;text-align:center}
+.child-card .who{font-size:1.4rem;font-weight:700}
+.child-card .lvl{color:var(--muted);font-size:.95rem;margin-top:4px}
+details.how{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 1em}
+details.how summary{cursor:pointer;font-weight:600}
+.linklike{background:none;border:none;color:var(--blue);font-size:1rem;cursor:pointer;display:block;margin:0 auto;text-decoration:underline}
+.device-note{text-align:center;color:var(--muted);font-size:.85rem;margin-top:1.2em}
+button.primary{display:block;width:100%;margin-top:6px;padding:15px;font-size:1.15rem;border:none;border-radius:14px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+button.primary:active{transform:scale(.99)}
+button.ghost{display:block;width:100%;margin-top:8px;padding:13px;font-size:1.05rem;border-radius:14px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+/* topbar */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.topbar #btn-back{font-size:1.5rem;border:1px solid var(--line);background:var(--card);border-radius:12px;width:44px;height:44px;cursor:pointer;color:var(--ink)}
+#q-counter{font-weight:600;color:var(--muted);flex:1}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.pill b{margin-left:2px}
+#dots{display:flex;gap:6px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap}
+#dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+#dots i.done{background:var(--accent)}
+#dots i.now{background:var(--blue)}
+/* prompt panel */
+.prompt-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px}
+.prompt-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.topic-pill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:700}
+.hint-btn{border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:8px 14px;font-size:.95rem;cursor:pointer;white-space:nowrap}
+.hint-btn:disabled{opacity:.4;cursor:default}
+.hint-btn.used{border-style:solid}
+#question-line{font-size:1.35rem;margin:.8em 0 1em;line-height:1.4}
+#choices{display:flex;flex-direction:column;gap:10px}
+button.choice{padding:16px;font-size:1.1rem;border-radius:14px;border:2px solid var(--line);background:#fbfcff;cursor:pointer;color:var(--ink);text-align:left}
+button.choice:active{transform:scale(.99)}
+button.choice:disabled{cursor:default}
+button.choice.right{border-color:var(--accent);background:var(--accent-soft)}
+button.choice.wrongpick{border-color:#c98a8a;background:#faf0f0}
+button.choice.elim{opacity:.35;text-decoration:line-through}
+#feedback{min-height:2em;text-align:center;font-weight:600;margin-top:12px;color:var(--accent)}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(44,58,50,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay .card{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px 20px;max-height:86vh;overflow:auto}
+.overlay h3{margin:.1em 0 .5em;font-size:1.25rem}
+.overlay .card p{margin:.5em 0}
+#ov-actions{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.98rem}
+.kv:last-child{border-bottom:none}
+.star-note{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:.95rem;margin-top:10px}
+.gentle{background:var(--blue-soft);border-radius:12px;padding:10px 12px;font-size:.98rem}
+.trow{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line);font-size:.95rem}
+.trow:last-child{border-bottom:none}
+.trow .tn{flex:1}
+.trow .tp{color:var(--muted);white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen">
+    <h1>Geo Quest</h1>
+    <p class="tag">A geography quiz adventure</p>
+    <div class="child-card">
+      <div class="who">Remy</div>
+      <div class="lvl">Ages 11–12 · capitals, landforms, rivers & map skills</div>
+    </div>
+    <details class="how">
+      <summary>How it works</summary>
+      <p>Answer 10 geography questions. Tap the answer you think is right — big buttons, no rush, no timers.</p>
+      <p>Stuck? Tap <b>Need a nudge?</b> for a clue. Still stuck? You can knock out two wrong answers — but using a hint means no star for that question. Stars have to be earned!</p>
+      <p>A wrong pick just brings a kind explanation and a similar question to try. Mistakes are part of learning.</p>
+    </details>
+    <button id="btn-start" class="primary">Start the quiz</button>
+    <button id="btn-parents-start" class="linklike" style="margin-top:10px">For parents</button>
+    <p class="device-note">Progress is saved only on this device.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen hidden">
+    <div class="topbar">
+      <button id="btn-back" aria-label="Back">‹</button>
+      <span id="q-counter"></span>
+      <span class="pill">★ <b id="star-count">0</b></span>
+      <span class="pill">streak <b id="streak-count">0</b></span>
+    </div>
+    <div id="dots"></div>
+    <div class="prompt-panel">
+      <div class="prompt-head">
+        <span class="topic-pill" id="topic-pill"></span>
+        <button id="btn-hint" class="hint-btn">Need a nudge?</button>
+      </div>
+      <div id="question-line"></div>
+      <div id="choices"></div>
+      <div id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay hidden">
+    <div class="card">
+      <h3 id="ov-title"></h3>
+      <div id="ov-body"></div>
+      <div id="ov-actions"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ================= config & bank (injected) ================= */
+const CFG = {"child": "Remy", "age": "12", "title": "Geo Quest \u2014 Remy's Geography Quiz", "storeKey": "geoquest.remy.v1"};
+const BANK = [
+{t:'World Capitals', q:'What is the capital of Japan?', c:['Osaka','Kyoto','Tokyo','Beijing'], a:2, h:'It hosted the 2020 Olympic Games.', w:'Tokyo is the capital and largest city of Japan.'},
+{t:'World Capitals', q:'What is the capital of Australia?', c:['Sydney','Melbourne','Canberra','Perth'], a:2, h:'It is NOT Sydney or Melbourne — that is the trick!', w:'Canberra is Australia\'s capital. Sydney and Melbourne are bigger, but neither is the capital.'},
+{t:'World Capitals', q:'What is the capital of Brazil?', c:['Rio de Janeiro','São Paulo','Brasília','Salvador'], a:2, h:'It is NOT Rio de Janeiro.', w:'Brasília became Brazil\'s capital in 1960.'},
+{t:'World Capitals', q:'What is the capital of Egypt?', c:['Alexandria','Cairo','Giza','Luxor'], a:1, h:'It is the largest city in the Arab world.', w:'Cairo is the capital of Egypt.'},
+{t:'World Capitals', q:'What is the capital of India?', c:['Mumbai','New Delhi','Kolkata','Chennai'], a:1, h:'It has the word "New" in front of an older city\'s name.', w:'New Delhi is the capital of India.'},
+{t:'World Capitals', q:'What is the capital of Argentina?', c:['Santiago','Buenos Aires','Lima','Montevideo'], a:1, h:'Its name means "good airs" in Spanish.', w:'Buenos Aires is the capital of Argentina.'},
+{t:'World Capitals', q:'What is the capital of Kenya?', c:['Nairobi','Mombasa','Kampala','Dar es Salaam'], a:0, h:'It is famous for a national park right next to the city.', w:'Nairobi is the capital of Kenya.'},
+{t:'World Capitals', q:'What is the capital of Mexico?', c:['Guadalajara','Mexico City','Cancún','Monterrey'], a:1, h:'It shares its name with the country.', w:'Mexico City is the capital of Mexico.'},
+{t:'World Capitals', q:'What is the capital of Spain?', c:['Barcelona','Madrid','Seville','Valencia'], a:1, h:'It sits in the centre of the country.', w:'Madrid is the capital of Spain.'},
+{t:'World Capitals', q:'What is the capital of Italy?', c:['Milan','Venice','Rome','Naples'], a:2, h:'The Colosseum is here.', w:'Rome is the capital of Italy.'},
+{t:'World Capitals', q:'What is the capital of Germany?', c:['Munich','Berlin','Hamburg','Frankfurt'], a:1, h:'A famous wall once divided this city.', w:'Berlin is the capital of Germany.'},
+{t:'World Capitals', q:'What is the capital of China?', c:['Shanghai','Beijing','Hong Kong','Guangzhou'], a:1, h:'It hosted the 2008 Olympic Games.', w:'Beijing is the capital of China.'},
+{t:'Landforms', q:'A large, flat, raised area of land is called a…', c:['Valley','Plateau','Canyon','Peninsula'], a:1, h:'It starts with P — think of a platter, flat on top.', w:'A plateau is an area of flat land raised above its surroundings.'},
+{t:'Landforms', q:'A deep, narrow valley with steep sides is a…', c:['Canyon','Plain','Delta','Isthmus'], a:0, h:'Think Grand ___.', w:'A canyon is a deep, narrow valley with steep sides, like the Grand Canyon.'},
+{t:'Landforms', q:'The Alps mountain range is on which continent?', c:['Asia','Europe','South America','Africa'], a:1, h:'Think Switzerland, skiing, and yodelling.', w:'The Alps stretch across south-central Europe.'},
+{t:'Landforms', q:'What is the highest mountain in Africa?', c:['Mount Kenya','Mount Kilimanjaro','Mount Elgon','Mount Stanley'], a:1, h:'It is in Tanzania and its name starts with K.', w:'Mount Kilimanjaro (5,895 m) is Africa\'s highest peak.'},
+{t:'Landforms', q:'A piece of land surrounded by water on three sides is a…', c:['Island','Peninsula','Archipelago','Atoll'], a:1, h:'Italy and Florida are famous examples.', w:'A peninsula is land nearly surrounded by water — like Italy.'},
+{t:'Landforms', q:'A chain or cluster of islands is called an…', c:['Archipelago','Peninsula','Isthmus','Delta'], a:0, h:'Japan and Hawaii are examples.', w:'An archipelago is a chain or cluster of islands.'},
+{t:'Landforms', q:'What is the lowest point on Earth\'s land surface?', c:['Death Valley','Dead Sea shore','Caspian Sea','Mariana Trench'], a:1, h:'It is an extremely salty lake between Israel and Jordan.', w:'The Dead Sea shore, about 430 m below sea level, is the lowest land point on Earth.'},
+{t:'Landforms', q:'The Andes run along which edge of South America?', c:['East coast','West coast','North coast','Through the middle'], a:1, h:'They face the Pacific Ocean.', w:'The Andes run down South America\'s western edge — the world\'s longest mountain range.'},
+{t:'Rivers', q:'Which river flows through Egypt?', c:['Nile','Amazon','Congo','Niger'], a:0, h:'It is traditionally called the longest river in the world.', w:'The Nile flows north through Egypt to the Mediterranean Sea.'},
+{t:'Rivers', q:'Which is the longest river in South America?', c:['Paraná','Amazon','Orinoco','São Francisco'], a:1, h:'It is named after legendary warrior women.', w:'The Amazon is the longest river in South America.'},
+{t:'Rivers', q:'Which river flows through London?', c:['Thames','Seine','Danube','Rhine'], a:0, h:'Its name rhymes with "gems".', w:'The River Thames flows through London.'},
+{t:'Rivers', q:'Which river forms much of the US–Mexico border?', c:['Colorado','Rio Grande','Mississippi','Columbia'], a:1, h:'Its name is Spanish for "big river".', w:'The Rio Grande forms much of the border between Texas and Mexico.'},
+{t:'Rivers', q:'What is Canada\'s longest river?', c:['St. Lawrence','Fraser','Mackenzie','Yukon'], a:2, h:'It flows north through the Northwest Territories to the Arctic Ocean.', w:'The Mackenzie River (about 4,240 km) is Canada\'s longest river.'},
+{t:'Deserts & Climate', q:'What is the largest hot desert in the world?', c:['Gobi','Sahara','Kalahari','Mojave'], a:1, h:'It covers much of northern Africa.', w:'The Sahara is the world\'s largest hot desert.'},
+{t:'Deserts & Climate', q:'The Gobi Desert is mostly in which country?', c:['China','Mongolia','Kazakhstan','India'], a:1, h:'It is the country between Russia and China.', w:'The Gobi Desert spans Mongolia and northern China.'},
+{t:'Deserts & Climate', q:'What is the difference between weather and climate?', c:['Climate is long-term, weather is day-to-day','Weather is long-term, climate is day-to-day','They mean exactly the same thing','Climate only refers to temperature'], a:0, h:'"Climate is what you expect; weather is what you get."', w:'Climate describes long-term patterns over years; weather is what is happening right now.'},
+{t:'Deserts & Climate', q:'Which climate zone is hot and wet all year?', c:['Polar','Temperate','Tropical','Arid'], a:2, h:'Rainforests grow in this zone.', w:'The tropical zone near the equator stays hot and wet all year.'},
+{t:'Deserts & Climate', q:'Which line of latitude is 0°?', c:['Prime Meridian','Equator','Tropic of Cancer','Arctic Circle'], a:1, h:'It circles the very middle of Earth.', w:'The equator is the line of 0° latitude.'},
+{t:'Deserts & Climate', q:'Lines of longitude meet at the…', c:['Equator','Poles','Tropic of Cancer','Prime Meridian'], a:1, h:'They are farthest apart at the equator and come together at the top and bottom.', w:'All lines of longitude converge at the North and South Poles.'},
+{t:'Deserts & Climate', q:'Which is the coldest continent?', c:['Asia','Antarctica','North America','Europe'], a:1, h:'The South Pole is here.', w:'Antarctica is the coldest continent on Earth.'},
+{t:'Canada', q:'Which is Canada\'s smallest province by area?', c:['Nova Scotia','New Brunswick','Prince Edward Island','Newfoundland and Labrador'], a:2, h:'It is an island province famous for potatoes and Anne of Green Gables.', w:'Prince Edward Island is Canada\'s smallest province.'},
+{t:'Canada', q:'What is the capital of British Columbia?', c:['Vancouver','Victoria','Kelowna','Surrey'], a:1, h:'It is on Vancouver Island, not on the mainland.', w:'Victoria, on Vancouver Island, is the capital of British Columbia.'},
+{t:'Canada', q:'Which province is famous for the Calgary Stampede?', c:['Saskatchewan','Alberta','Manitoba','Ontario'], a:1, h:'It is a western province famous for oil and rodeos.', w:'The Calgary Stampede, the famous rodeo, is in Alberta.'},
+{t:'Canada', q:'The St. Lawrence River flows into which ocean?', c:['Pacific','Arctic','Atlantic','Indian'], a:2, h:'It flows past Montreal and Quebec City toward the east coast.', w:'The St. Lawrence River empties into the Atlantic Ocean.'},
+{t:'Canada', q:'Which Great Lake lies entirely inside the United States?', c:['Superior','Michigan','Huron','Ontario'], a:1, h:'It is the odd one out — the others are shared with Canada.', w:'Lake Michigan is the only Great Lake entirely within the US.'},
+{t:'Canada', q:'What is the capital of Nunavut?', c:['Whitehorse','Yellowknife','Iqaluit','Rankin Inlet'], a:2, h:'It is Canada\'s northernmost capital city.', w:'Iqaluit is the capital of Nunavut.'},
+{t:'Map Skills', q:'What does a map\'s legend (key) show?', c:['Which way is north','What the symbols mean','How far apart places are','When the map was made'], a:1, h:'It is the little box that explains the pictures on the map.', w:'A map\'s legend explains what each symbol on the map means.'},
+{t:'Map Skills', q:'What does a map\'s scale tell you?', c:['How old the map is','How map distances relate to real distances','Which way is north','What the colours mean'], a:1, h:'Like "1 cm = 100 km".', w:'Scale tells you how distances on the map compare to real-world distances.'},
+{t:'Map Skills', q:'A political map is most likely to show…', c:['Mountains and rivers','Country borders','Rainfall amounts','Population graphs'], a:1, h:'"Political" is about governments and countries.', w:'Political maps show borders between countries and regions.'},
+{t:'Map Skills', q:'Contour lines on a map show…', c:['Roads','Rivers','Elevation (height)','City boundaries'], a:2, h:'Lines close together mean steep ground.', w:'Contour lines connect points of equal elevation — close lines mean steep slopes.'},
+{t:'Map Skills', q:'The Prime Meridian is at which longitude?', c:['0°','90°E','180°','90°W'], a:0, h:'It runs through Greenwich in London.', w:'The Prime Meridian, at 0° longitude, runs through Greenwich, London.'},
+{t:'Coordinates & Scale', q:'Latitude measures how far north or south a place is from…', c:['The Prime Meridian','The equator','The North Pole','Sea level'], a:1, h:'Latitude lines run parallel to this 0° line.', w:'Latitude is measured in degrees north or south of the equator (0°).'},
+{t:'Coordinates & Scale', q:'What is the latitude of the North Pole?', c:['0°','45°N','90°N','180°'], a:2, h:'It is the farthest north you can go.', w:'The North Pole sits at 90°N — the maximum latitude.'},
+{t:'Coordinates & Scale', q:'Lines of latitude are also called…', c:['Meridians','Parallels','Contours','Equators'], a:1, h:'They run parallel to the equator and never meet.', w:'Lines of latitude are called parallels; lines of longitude are called meridians.'},
+{t:'Coordinates & Scale', q:'On a map with a scale of 1:100,000, 1 cm on the map equals…', c:['100 m in real life','1 km in real life','10 km in real life','100 km in real life'], a:1, h:'100,000 cm is 1,000 m — and 1,000 m is 1 km.', w:'At 1:100,000, 1 cm represents 100,000 cm = 1 km.'},
+{t:'Coordinates & Scale', q:'A 1:25,000 map shows _____ a 1:250,000 map of the same place.', c:['Less detail than','The same detail as','More detail than','A smaller area only'], a:2, h:'The bigger the second number, the smaller the scale — and the less detail.', w:'1:25,000 is a larger scale than 1:250,000, so it shows more detail.'},
+{t:'Coordinates & Scale', q:'On a map, 2 cm represents 10 km in real life. How far is 1 cm?', c:['2 km','5 km','10 km','20 km'], a:1, h:'Half the map distance means half the real distance.', w:'If 2 cm = 10 km, then 1 cm = 5 km.'}
+];
+
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = rnd(i + 1); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+
+/* ================= store (this device only) ================= */
+const STORE_KEY = CFG.storeKey;
+function blankStore(){ return { stars:0, bestStreak:0, streak:0, rounds:0, topics:{} }; }
+function loadStore(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && typeof s === 'object'){ const b = blankStore(); return Object.assign(b, s); }
+  }catch(e){}
+  return blankStore();
+}
+let S = loadStore();
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+function tp(topic){
+  if (!S.topics[topic]) S.topics[topic] = { a:0, c:0, h:0 };
+  return S.topics[topic];
+}
+function recordAttempt(topic, ok){
+  const t = tp(topic); t.a++; if (ok) t.c++; save();
+}
+function recordHint(topic){ tp(topic).h++; save(); }
+
+/* ================= game flow ================= */
+const ROUND_N = 10;
+let qi = 0, order = [], q = null, qOrder = [], qCorrect = 0;
+let hintTier = 0, hintUsedQ = false, wrongQ = false, roundStars = 0;
+let locked = false;
+
+function showScreen(name){
+  $('screen-start').classList.toggle('hidden', name !== 'start');
+  $('screen-game').classList.toggle('hidden', name !== 'game');
+}
+function updatePills(){
+  $('star-count').textContent = S.stars;
+  $('streak-count').textContent = S.streak;
+}
+function renderDots(){
+  const d = $('dots'); d.innerHTML = '';
+  for (let i = 0; i < ROUND_N; i++){
+    const el = document.createElement('i');
+    if (i < qi) el.className = 'done';
+    else if (i === qi) el.className = 'now';
+    d.appendChild(el);
+  }
+}
+function startRound(){
+  qi = 0; roundStars = 0;
+  order = shuffle(BANK.map((_, i) => i));
+  showScreen('game'); updatePills();
+  newQuestion();
+}
+function pickQuestion(sameTopic){
+  // find next unused question, preferring sameTopic for retries
+  for (let k = 0; k < order.length; k++){
+    const idx = order[(qi + k) % order.length];
+    if (sameTopic && BANK[idx].t !== sameTopic) continue;
+    // ensure not already seen this round
+    if (order.slice(0, qi).includes(idx)) continue;
+    // move chosen to position qi
+    const pos = order.indexOf(idx);
+    const tmp = order[qi]; order[qi] = order[pos]; order[pos] = tmp;
+    return BANK[idx];
+  }
+  // fallback: any unused
+  for (let k = 0; k < order.length; k++){
+    const idx = order[k];
+    if (!order.slice(0, qi).includes(idx)) return BANK[idx];
+  }
+  return BANK[order[qi % order.length]];
+}
+function newQuestion(sameTopic){
+  q = pickQuestion(sameTopic);
+  hintTier = 0; hintUsedQ = false; wrongQ = false; locked = false;
+  renderDots(); renderQuestion();
+}
+function renderQuestion(){
+  $('topic-pill').textContent = q.t;
+  $('question-line').textContent = q.q;
+  $('feedback').textContent = '';
+  const hb = $('btn-hint');
+  hb.disabled = false; hb.textContent = 'Need a nudge?'; hb.classList.remove('used');
+  const box = $('choices'); box.innerHTML = '';
+  qOrder = shuffle([0,1,2,3]);
+  qCorrect = qOrder.indexOf(q.a);
+  qOrder.forEach((ci, pos) => {
+    const b = document.createElement('button');
+    b.className = 'choice'; b.textContent = q.c[ci];
+    b.dataset.pos = pos;
+    b.onclick = () => onPick(pos, b);
+    box.appendChild(b);
+  });
+  $('q-counter').textContent = 'Question ' + (qi + 1) + ' of ' + ROUND_N;
+  renderDots();
+}
+function setChoicesEnabled(on){
+  Array.prototype.forEach.call($('choices').children, b => { b.disabled = !on; });
+}
+function onPick(pos, btn){
+  if (locked) return;
+  locked = true;
+  const ok = pos === qCorrect;
+  recordAttempt(q.t, ok);
+  const buttons = $('choices').children;
+  if (ok){
+    btn.classList.add('right');
+    $('feedback').textContent = 'Nice — that\'s right!';
+    setChoicesEnabled(false);
+    setTimeout(questionDone, 1100);
+  } else {
+    wrongQ = true;
+    btn.classList.add('wrongpick');
+    buttons[qCorrect].classList.add('right');
+    $('feedback').textContent = 'Not quite — let\'s look at why.';
+    setChoicesEnabled(false);
+    setTimeout(() => showExplain(), 1100);
+  }
+}
+function questionDone(){
+  if (!hintUsedQ && !wrongQ){ S.stars++; roundStars++; }
+  S.streak++; if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+  save(); updatePills(); qi++;
+  if (qi >= ROUND_N) roundDone();
+  else newQuestion();
+}
+/* retry after a wrong answer: similar question, same slot */
+function retrySimilar(){
+  hideOverlay();
+  newQuestion(q.t);
+  // keep wrongQ=true so this slot can't earn a star
+  wrongQ = true;
+}
+function roundDone(){
+  S.rounds++; save();
+  showOverlay('Round complete!',
+    '<p style="font-size:1.2rem;text-align:center">You earned <b>★ ' + roundStars + '</b> this round.</p>' +
+    (roundStars < ROUND_N
+      ? '<p class="gentle">Hints are there when you need them — but stars are earned by answering cleanly. Try another round!</p>'
+      : '<p class="gentle">A perfect round — every question answered with no hints and no wrong picks!</p>'),
+    [
+      { label:'Play again', primary:true, onClick:startRound },
+      { label:'Back to start', onClick:() => showScreen('start') }
+    ]);
+}
+
+/* ---------- overlays ---------- */
+function showOverlay(title, bodyHTML, buttons){
+  $('ov-title').textContent = title;
+  $('ov-body').innerHTML = bodyHTML;
+  const az = $('ov-actions'); az.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.primary ? 'primary' : 'ghost';
+    btn.textContent = b.label;
+    btn.onclick = () => { hideOverlay(); if (b.onClick) b.onClick(); };
+    az.appendChild(btn);
+  });
+  $('overlay').classList.remove('hidden');
+}
+function hideOverlay(){ $('overlay').classList.add('hidden'); }
+function showExplain(){
+  showOverlay('Pause & learn',
+    '<div class="gentle">' + q.w + '</div><p>No stress — let\'s try a similar one.</p>',
+    [{ label:'Try a similar one', primary:true, onClick:retrySimilar }]);
+}
+
+/* ---------- hints ---------- */
+function onHint(){
+  hintTier++;
+  hintUsedQ = true; recordHint(q.t);
+  const hb = $('btn-hint'); hb.classList.add('used');
+  if (hintTier === 1){
+    showOverlay('A nudge for this question', '<p>' + q.h + '</p>' +
+      '<div class="star-note">Using a hint means no star for this question — but answering it still counts. Stars have to be earned!</div>',
+      [
+        { label:'Got it', primary:true },
+        { label:'Still stuck?', onClick:onHint }
+      ]);
+  } else {
+    // tier 2: knock out two wrong answers
+    const buttons = Array.prototype.slice.call($('choices').children);
+    const wrongs = shuffle(buttons.filter((b, i) => i !== qCorrect)).slice(0, 2);
+    wrongs.forEach(b => { b.classList.add('elim'); b.disabled = true; });
+    hb.disabled = true; hb.textContent = 'No more hints — give it a try!';
+    hideOverlay();
+    $('feedback').textContent = 'Two wrong answers knocked out — you\'ve got this!';
+  }
+}
+
+/* ---------- parents ---------- */
+function showParents(){
+  let rows = '';
+  Object.keys(S.topics).sort().forEach(t => {
+    const s = S.topics[t];
+    const pct = s.a ? Math.round(100 * s.c / s.a) + '%' : '—';
+    rows += '<div class="trow"><span class="tn">' + t + '</span><span class="tp">' + pct + ' · ' + s.h + ' hint' + (s.h === 1 ? '' : 's') + '</span></div>';
+  });
+  if (!rows) rows = '<p class="gentle">No questions answered yet — play a round first!</p>';
+  showOverlay('For parents — ' + CFG.child,
+    '<div class="kv"><span>Stars earned</span><span>★ ' + S.stars + '</span></div>' +
+    '<div class="kv"><span>Best streak</span><span>' + S.streak + '</span></div>' +
+    '<div class="kv"><span>Rounds played</span><span>' + S.rounds + '</span></div>' +
+    '<h4 style="margin:.8em 0 .2em">By topic</h4>' + rows +
+    '<p class="device-note">Progress is saved only on this device.</p>',
+    [
+      { label:'Reset progress', onClick:confirmReset },
+      { label:'Close', primary:true }
+    ]);
+}
+function confirmReset(){
+  showOverlay('Reset progress?',
+    '<p>This erases stars, streaks, and all stats on this device. Are you sure?</p>',
+    [
+      { label:'Yes, erase everything', onClick:() => { S = blankStore(); save(); updatePills(); } },
+      { label:'Keep my progress', primary:true }
+    ]);
+}
+
+/* ---------- init ---------- */
+function init(){
+  document.title = CFG.title;
+  $('btn-start').addEventListener('click', startRound);
+  $('btn-back').addEventListener('click', () => showScreen('start'));
+  $('btn-hint').addEventListener('click', onHint);
+  $('btn-parents-start').addEventListener('click', showParents);
+  updatePills();
+  showScreen('start');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
