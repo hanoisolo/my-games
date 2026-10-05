@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Flip &amp; Solve — Fractions × and ÷</title>
+<style>
+:root{
+  --bg:#f3f5fa; --ink:#2c3550; --muted:#6b7490;
+  --card:#ffffff; --line:#e2e7f0;
+  --accent:#4a7c59; --accent-soft:#e4efe7;
+  --blue:#5b7fa6; --blue-soft:#e3eaf5;
+  --gold:#c9a227; --gold-soft:#faf3dd;
+  --warn:#b7794c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+#app{max-width:540px;margin:0 auto;min-height:100vh;padding:20px 16px 220px}
+.hidden{display:none !important}
+h1{font-size:2rem;margin:.2em 0 .1em;text-align:center}
+.tag{text-align:center;color:var(--muted);margin:0 0 1.2em}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.levels{display:flex;flex-direction:column;gap:10px;margin:0 0 1em}
+button.level{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;font-size:1.15rem;border-radius:16px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.level:not(:disabled):active{transform:scale(.98)}
+button.level:disabled{opacity:.55;cursor:default}
+button.level.sel{border-color:var(--accent);background:var(--accent-soft)}
+button.level em{font-style:normal;font-size:.85rem;color:var(--muted)}
+.badge{font-size:.75rem;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:2px 10px}
+details.how{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 1em}
+details.how summary{cursor:pointer;font-weight:600}
+.linklike{background:none;border:none;color:var(--blue);font-size:1rem;cursor:pointer;display:block;margin:0 auto;text-decoration:underline}
+.device-note{text-align:center;color:var(--muted);font-size:.85rem;margin-top:1.2em}
+/* topbar */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.topbar #btn-back{font-size:1.5rem;border:1px solid var(--line);background:var(--card);border-radius:12px;width:44px;height:44px;cursor:pointer;color:var(--ink)}
+#q-counter{font-weight:600;color:var(--muted);flex:1}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.pill b{margin-left:2px}
+#dots{display:flex;gap:6px;justify-content:center;margin:4px 0 12px}
+#dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+#dots i.done{background:var(--accent)}
+#dots i.now{background:var(--blue)}
+/* prompt panel */
+.prompt-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px}
+.prompt-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.prompt-head h2{font-size:1.2rem;margin:0}
+.hint-btn{border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:8px 14px;font-size:.95rem;cursor:pointer;white-space:nowrap}
+.hint-btn:disabled{opacity:.4;cursor:default}
+.hint-btn.used{border-style:solid}
+.p-sub{color:var(--muted);margin:.4em 0 .8em}
+#question-line{font-size:1.5rem;text-align:center;margin:.4em 0 .6em}
+#visual{margin:.4em auto;max-width:340px}
+#answer-zone{display:flex;justify-content:center;align-items:center;gap:10px;margin:14px 0;min-height:76px;flex-wrap:wrap}
+button.primary{display:block;width:100%;margin-top:6px;padding:15px;font-size:1.15rem;border:none;border-radius:14px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+button.primary:active{transform:scale(.99)}
+button.ghost{display:block;width:100%;margin-top:8px;padding:13px;font-size:1.05rem;border-radius:14px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+/* fractions */
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .18em;font-size:1.15em}
+.frac .num{border-bottom:2px solid currentColor;padding:0 .35em;line-height:1.3}
+.frac .den{padding:0 .35em;line-height:1.3}
+/* answer boxes */
+.abox{min-width:64px;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fbfcff;font-size:1.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:4px 10px}
+.abox.sel{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 2px var(--blue-soft)}
+.frac-entry{display:flex;flex-direction:column;align-items:center}
+.frac-entry .bar{width:74px;border-bottom:3px solid var(--ink);margin:2px 0}
+.op-symbol{font-size:1.8rem;color:var(--muted)}
+/* method choice */
+.choice{display:block;width:100%;padding:16px;margin:6px 0;font-size:1.1rem;border-radius:14px;border:2px solid var(--line);background:#fbfcff;cursor:pointer;color:var(--ink)}
+.choice:active{transform:scale(.99)}
+/* area model */
+.agrid{display:grid;gap:2px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:6px}
+.agrid i{aspect-ratio:1/1;border-radius:3px;background:#eef1f7;min-width:0}
+.agrid i.v{background:#bcd3ee}
+.agrid i.h{background:#f2e2b8}
+.agrid i.vh{background:#9fd0a8}
+.legend{display:flex;gap:14px;justify-content:center;font-size:.85rem;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend s{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;text-decoration:none;vertical-align:-1px}
+/* number pad */
+#pad{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:540px;margin:0 auto;z-index:5}
+#pad button{font-size:1.45rem;padding:11px;border-radius:12px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+#pad button:active{background:var(--blue-soft)}
+#pad button.fn{font-size:1.05rem;color:var(--muted)}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(44,53,80,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay .card{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px 20px;max-height:86vh;overflow:auto}
+.overlay h3{margin:.1em 0 .5em;font-size:1.25rem}
+.overlay .card p{margin:.5em 0}
+#ov-actions{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.98rem}
+.kv:last-child{border-bottom:none}
+.star-note{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:.95rem;margin-top:10px}
+.gentle{background:var(--blue-soft);border-radius:12px;padding:10px 12px;font-size:.98rem}
+.big-frac{font-size:2rem;text-align:center;margin:.3em 0}
+.flip-arrow{text-align:center;font-size:1.6rem;color:var(--blue);margin:.1em 0}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen">
+    <h1>Flip &amp; Solve</h1>
+    <p class="tag">Fractions: multiply &amp; divide</p>
+    <div class="levels">
+      <button class="level" data-level="adeline" disabled><span>Adeline</span><span><span class="badge">Coming soon</span></span></button>
+      <button class="level sel" data-level="remy"><span>Remy</span><em>Grade 7 · × and ÷</em></button>
+      <button class="level" data-level="seline" disabled><span>Seline</span><span><span class="badge">Coming soon</span></span></button>
+    </div>
+    <details class="how">
+      <summary>How it works</summary>
+      <p>Each question walks you through the steps: pick the right method, multiply, then simplify. Stuck on a step? Tap <b>Need a nudge?</b> for a hint that guides you without giving the answer.</p>
+      <p>Stars are earned by solving a question with no hints and no wrong steps. Using a hint still counts as solved — it just doesn't earn a star. They have to be earned!</p>
+    </details>
+    <button id="btn-parents-start" class="linklike">For parents</button>
+    <p class="device-note">Progress is saved only on this device.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen hidden">
+    <div class="topbar">
+      <button id="btn-back" aria-label="Back">‹</button>
+      <span id="q-counter"></span>
+      <span class="pill">★ <b id="star-count">0</b></span>
+      <span class="pill">streak <b id="streak-count">0</b></span>
+    </div>
+    <div id="dots"></div>
+    <div class="prompt-panel">
+      <div class="prompt-head">
+        <h2 id="step-title"></h2>
+        <button id="btn-hint" class="hint-btn">Need a nudge?</button>
+      </div>
+      <p id="step-sub" class="p-sub"></p>
+      <div id="question-line"></div>
+      <div id="visual"></div>
+      <div id="answer-zone"></div>
+      <button id="btn-check" class="primary">Check</button>
+    </div>
+  </section>
+
+  <!-- NUMBER PAD -->
+  <div id="pad" class="hidden">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k="back" class="fn">⌫</button><button data-k="0">0</button><button data-k="clear" class="fn">Clear</button>
+  </div>
+
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay hidden">
+    <div class="card">
+      <h3 id="ov-title"></h3>
+      <div id="ov-body"></div>
+      <div id="ov-actions"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = arr => arr[rnd(arr.length)];
+function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b){ const t = a % b; a = b; b = t; } return a || 1; }
+function fracHTML(n, d){ return '<span class="frac"><span class="num">' + n + '</span><span class="den">' + d + '</span></span>'; }
+function equiv(n1, d1, n2, d2){ return n1 * d2 === n2 * d1; }
+function mixedHTML(n, d){
+  if (n < d) return fracHTML(n, d);
+  const w = Math.floor(n / d), r = n % d;
+  if (r === 0) return String(w);
+  return w + ' ' + fracHTML(r, d);
+}
+function smallestPrimeFactor(n){
+  for (let p = 2; p <= n; p++) if (n % p === 0) return p;
+  return n;
+}
+
+/* ================= store (this device only) ================= */
+const STORE_KEY = 'flipandsolve.v1';
+const STEP_NAMES = {
+  method:  'Choosing the method',
+  flip:    'Flipping the fraction',
+  multTop: 'Multiplying the tops',
+  multBot: 'Multiplying the bottoms',
+  simplify:'Simplifying'
+};
+function blankStore(){ return { stars:0, bestStreak:0, streak:0, rounds:0, steps:{} }; }
+function loadStore(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && typeof s === 'object'){ const b = blankStore(); return Object.assign(b, s); }
+  }catch(e){}
+  return blankStore();
+}
+let S = loadStore();
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+function st(key){
+  if (!S.steps[key]) S.steps[key] = { a:0, c:0, h:0 };
+  return S.steps[key];
+}
+function recordStep(key, ok){
+  const s = st(key); s.a++; if (ok) s.c++; save();
+}
+function recordHint(key){ st(key).h++; save(); }
+
+/* ================= question generator ================= */
+const DENOMS = [2,3,4,5,6,7,8,9,10,12];
+function genQuestion(op){
+  let a,b,c,d,guard = 0;
+  do{
+    b = pick(DENOMS); d = pick(DENOMS);
+    a = 1 + rnd(b - 1); c = 1 + rnd(d - 1);
+    guard++;
+  }while(a * c === 1 && guard < 20);
+  if (!op) op = Math.random() < 0.5 ? '×' : '÷';
+  return { op, a, b, c, d, id: op + a + '/' + b + '_' + c + '/' + d };
+}
+/* the multiplication actually performed (after any flip) */
+function multParts(q){
+  if (q.op === '×') return { x1:q.a, y1:q.b, x2:q.c, y2:q.d };
+  return { x1:q.a, y1:q.b, x2:q.d, y2:q.c }; // a/b × d/c
+}
+function finalAnswer(q){
+  const m = multParts(q);
+  const n = m.x1 * m.x2, d = m.y1 * m.y2, g = gcd(n, d);
+  return { n:n/g, d:d/g };
+}
+
+/* ================= visuals ================= */
+function areaModelHTML(x1, y1, x2, y2){
+  // shade x1/y1 vertically, x2/y2 horizontally; overlap = product
+  const cols = y1, rows = y2;
+  let cells = '';
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      const v = c < x1, h = r < x2;
+      cells += '<i class="' + (v && h ? 'vh' : v ? 'v' : h ? 'h' : '') + '"></i>';
+    }
+  }
+  return '<div class="agrid" style="grid-template-columns:repeat(' + cols + ',1fr)">' + cells + '</div>' +
+    '<div class="legend"><span><s style="background:#bcd3ee"></s>' + fracHTML(x1,y1) + '</span>' +
+    '<span><s style="background:#f2e2b8"></s>' + fracHTML(x2,y2) + '</span>' +
+    '<span><s style="background:#9fd0a8"></s>overlap = answer</span></div>';
+}
+/* ================= game flow ================= */
+const ROUND_N = 8;
+let level = 'remy';
+let qi = 0, q = null, steps = [], si = 0;
+let hintTier = 0, hintUsedQ = false, wrongQ = false, roundStars = 0;
+let selBox = null;
+const seenIds = new Set();
+
+function buildSteps(q){
+  const s = [{ key:'method' }];
+  if (q.op === '÷') s.push({ key:'flip' });
+  s.push({ key:'multTop' }, { key:'multBot' }, { key:'simplify' });
+  return s;
+}
+function stepNum(){ return si + 1; }
+
+function showScreen(name){
+  $('screen-start').classList.toggle('hidden', name !== 'start');
+  $('screen-game').classList.toggle('hidden', name !== 'game');
+  if (name !== 'game') $('pad').classList.add('hidden');
+}
+function updatePills(){
+  $('star-count').textContent = S.stars;
+  $('streak-count').textContent = S.streak;
+}
+function renderDots(){
+  const d = $('dots'); d.innerHTML = '';
+  for (let i = 0; i < ROUND_N; i++){
+    const el = document.createElement('i');
+    if (i < qi) el.className = 'done';
+    else if (i === qi) el.className = 'now';
+    d.appendChild(el);
+  }
+}
+
+function startRound(){
+  qi = 0; roundStars = 0; seenIds.clear();
+  showScreen('game'); updatePills();
+  newQuestion();
+}
+function newQuestion(sameOp){
+  let nq, guard = 0;
+  do { nq = genQuestion(sameOp || (q ? q.op : null)); guard++; }
+  while (seenIds.has(nq.id) && guard < 40);
+  seenIds.add(nq.id);
+  q = nq; steps = buildSteps(q); si = 0;
+  hintTier = 0; hintUsedQ = false; wrongQ = false;
+  renderDots(); renderStep();
+}
+function nextStep(){
+  si++; hintTier = 0;
+  if (si >= steps.length) questionDone();
+  else renderStep();
+}
+function questionDone(){
+  if (!hintUsedQ && !wrongQ){ S.stars++; roundStars++; }
+  S.streak++; if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+  save(); updatePills(); qi++;
+  if (qi >= ROUND_N) roundDone();
+  else newQuestion();
+}
+function roundDone(){
+  S.rounds++; save();
+  showOverlay('Round complete!',
+    '<p style="font-size:1.2rem;text-align:center">You earned <b>★ ' + roundStars + '</b> this round.</p>' +
+    (roundStars < ROUND_N ? '<p class="gentle">Hints are there when you need them — but stars are earned by solving cleanly. Try another round!</p>' : '<p class="gentle">A perfect round — every question solved with no hints and no wrong steps!</p>'),
+    [
+      { label:'Play again', primary:true, onClick:startRound },
+      { label:'Back to start', onClick:()=>showScreen('start') }
+    ]);
+}
+
+/* ---------- overlays ---------- */
+function showOverlay(title, bodyHTML, buttons){
+  $('ov-title').textContent = title;
+  $('ov-body').innerHTML = bodyHTML;
+  const az = $('ov-actions'); az.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.primary ? 'primary' : 'ghost';
+    btn.textContent = b.label;
+    btn.onclick = () => { hideOverlay(); if (b.onClick) b.onClick(); };
+    az.appendChild(btn);
+  });
+  $('overlay').classList.remove('hidden');
+}
+function hideOverlay(){ $('overlay').classList.add('hidden'); }
+
+function showExplain(html){
+  showOverlay('Pause & learn',
+    '<div class="gentle">' + html + '</div><p>No stress — let\'s try a similar one.</p>',
+    [{ label:'Try a similar one', primary:true, onClick:() => newQuestion(q.op) }]);
+}
+
+/* ---------- hints ---------- */
+function hintText(key, tier){
+  const m = multParts(q);
+  if (key === 'method'){
+    if (tier === 1) return 'Look at the sign between the two fractions. <b>×</b> means multiply straight across. <b>÷</b> means flip the second fraction first. Which sign do you see?';
+    return 'This question uses <b>' + q.op + '</b>. ' + (q.op === '÷'
+      ? 'So the first move is to flip the second fraction — tap that button.'
+      : 'So multiply straight across — tap that button.');
+  }
+  if (key === 'flip'){
+    if (tier === 1) return 'To flip a fraction, the top and bottom numbers swap places. In ' + fracHTML(q.c, q.d) + ', which number is on top right now?';
+    return 'Put <b>' + q.d + '</b> in the top box and <b>' + q.c + '</b> in the bottom box — the numbers just swap places.';
+  }
+  if (key === 'multTop'){
+    if (tier === 1) return 'Multiply the two top numbers: <b>' + m.x1 + ' × ' + m.x2 + '</b>. Think of it as ' + m.x1 + ' groups of ' + m.x2 + '.';
+    return 'Add it up: ' + m.x1 + ' + ' + m.x1 + ' + … (' + m.x2 + ' times). What do you get?';
+  }
+  if (key === 'multBot'){
+    if (tier === 1) return 'Multiply the two bottom numbers: <b>' + m.y1 + ' × ' + m.y2 + '</b>. Think of it as ' + m.y1 + ' groups of ' + m.y2 + '.';
+    return 'Add it up: ' + m.y1 + ' + ' + m.y1 + ' + … (' + m.y2 + ' times). What do you get?';
+  }
+  if (key === 'simplify'){
+    const m2 = multParts(q), n0 = m2.x1 * m2.x2, d0 = m2.y1 * m2.y2, g = gcd(n0, d0);
+    if (tier === 1) return 'What is the biggest number that divides both <b>' + n0 + '</b> and <b>' + d0 + '</b>?';
+    return 'Try dividing the top and bottom by <b>' + smallestPrimeFactor(g) + '</b> — what do you get?';
+  }
+  return '';
+}
+function onHint(){
+  const key = steps[si].key;
+  hintTier++;
+  hintUsedQ = true; recordHint(key);
+  const b = $('btn-hint'); b.classList.add('used');
+  const btns = [{ label:'Got it', primary:true }];
+  if (hintTier === 1) btns.push({ label:'Still stuck?', onClick:onHint });
+  else { b.disabled = true; b.textContent = 'No more hints — give it a try!'; }
+  showOverlay('A nudge for this step', '<p>' + hintText(key, hintTier) + '</p>' +
+    '<div class="star-note">Using a hint means no star for this question — but solving it still counts. Stars have to be earned!</div>', btns);
+}
+
+/* ---------- explanations for wrong answers ---------- */
+function explainText(key){
+  const m = multParts(q);
+  if (key === 'method') return 'With <b>×</b>, you multiply straight across: top × top, bottom × bottom. With <b>÷</b>, you flip the second fraction first, then multiply. This question uses <b>' + q.op + '</b>.';
+  if (key === 'flip') return 'Flipping ' + fracHTML(q.c, q.d) + ' swaps the top and bottom: ' + fracHTML(q.d, q.c) + '. So ' + fracHTML(q.a, q.b) + ' ÷ ' + fracHTML(q.c, q.d) + ' becomes ' + fracHTML(q.a, q.b) + ' × ' + fracHTML(q.d, q.c) + '.';
+  if (key === 'multTop') return 'Multiply the tops: ' + m.x1 + ' × ' + m.x2 + ' = <b>' + (m.x1 * m.x2) + '</b>.';
+  if (key === 'multBot') return 'Multiply the bottoms: ' + m.y1 + ' × ' + m.y2 + ' = <b>' + (m.y1 * m.y2) + '</b>.';
+  if (key === 'simplify'){
+    const n0 = m.x1 * m.x2, d0 = m.y1 * m.y2, g = gcd(n0, d0);
+    return 'Both ' + n0 + ' and ' + d0 + ' divide by ' + g + ': ' + n0 + ' ÷ ' + g + ' = ' + (n0/g) + ', ' + d0 + ' ÷ ' + g + ' = ' + (d0/g) + ' → <b>' + mixedHTML(n0/g, d0/g) + '</b>.';
+  }
+  return '';
+}
+
+/* ---------- answer zone ---------- */
+function boxHTML(){ return '<div class="abox" tabindex="0"></div>'; }
+function fracEntryHTML(){
+  return '<div class="frac-entry">' + boxHTML() + '<div class="bar"></div>' + boxHTML() + '</div>';
+}
+function wireBoxes(){
+  const boxes = Array.prototype.slice.call($('answer-zone').querySelectorAll('.abox'));
+  boxes.forEach(b => b.addEventListener('click', () => selectBox(b)));
+  if (boxes.length) selectBox(boxes[0]);
+}
+function selectBox(b){
+  Array.prototype.forEach.call($('answer-zone').querySelectorAll('.abox'), x => x.classList.remove('sel'));
+  b.classList.add('sel'); selBox = b;
+}
+function boxVals(){
+  return Array.prototype.map.call($('answer-zone').querySelectorAll('.abox'), b => b.textContent.trim());
+}
+
+/* ---------- step rendering ---------- */
+function setStep(title, sub, qline, visual, showCheck, showPad){
+  $('step-title').textContent = title;
+  $('step-sub').innerHTML = sub;
+  $('question-line').innerHTML = qline;
+  $('visual').innerHTML = visual || '';
+  $('btn-check').classList.toggle('hidden', !showCheck);
+  $('pad').classList.toggle('hidden', !showPad);
+  const hb = $('btn-hint');
+  hb.disabled = false; hb.textContent = 'Need a nudge?'; hb.classList.remove('used');
+  $('q-counter').textContent = 'Question ' + (qi + 1) + ' of ' + ROUND_N;
+  renderDots();
+}
+function eqLine(){ return fracHTML(q.a, q.b) + ' <span class="op-symbol">' + q.op + '</span> ' + fracHTML(q.c, q.d); }
+
+function renderStep(){
+  const key = steps[si].key, m = multParts(q), n = stepNum();
+  wireHintOnce();
+  if (key === 'method'){
+    setStep('Step ' + n + ': Pick the method',
+      'Do we multiply straight across, or flip first?',
+      eqLine(), '', false, false);
+    const az = $('answer-zone'); az.innerHTML = '';
+    [['mul', 'Multiply the tops and bottoms'], ['flip', 'Flip the second fraction, then multiply']].forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.className = 'choice'; b.textContent = label;
+      b.onclick = () => {
+        const ok = (v === 'mul') === (q.op === '×');
+        recordStep('method', ok);
+        if (ok) nextStep();
+        else { wrongQ = true; showExplain(explainText('method')); }
+      };
+      az.appendChild(b);
+    });
+    return;
+  }
+  if (key === 'flip'){
+    setStep('Step ' + n + ': Flip the second fraction',
+      'Dividing by a fraction is the same as multiplying by its flip.',
+      fracHTML(q.a, q.b) + ' <span class="op-symbol">÷</span> ' + fracHTML(q.c, q.d) + ' <span class="op-symbol">=</span> ' + fracHTML(q.a, q.b) + ' <span class="op-symbol">×</span> ?',
+      '<div class="big-frac">' + fracHTML(q.c, q.d) + '</div><div class="flip-arrow">⇅ flip it</div>',
+      true, true);
+    $('answer-zone').innerHTML = fracEntryHTML(); wireBoxes();
+    return;
+  }
+  if (key === 'multTop' || key === 'multBot'){
+    const isTop = key === 'multTop';
+    const x = isTop ? m.x1 : m.y1, y = isTop ? m.x2 : m.y2;
+    const word = isTop ? 'top' : 'bottom';
+    setStep('Step ' + n + ': Multiply the ' + word + 's',
+      isTop ? 'Multiply the two top numbers.' : 'Multiply the two bottom numbers.',
+      eqLine(),
+      areaModelHTML(m.x1, m.y1, m.x2, m.y2) +
+        (q.op === '÷' ? '<p class="p-sub" style="text-align:center">after the flip: ' + fracHTML(q.a, q.b) + ' × ' + fracHTML(q.d, q.c) + '</p>' : ''),
+      true, true);
+    $('answer-zone').innerHTML = boxHTML(); wireBoxes();
+    return;
+  }
+  if (key === 'simplify'){
+    const n0 = m.x1 * m.x2, d0 = m.y1 * m.y2, ans = finalAnswer(q);
+    setStep('Step ' + n + ': Simplify',
+      'Divide the top and bottom by the same number until it can\'t go any smaller.',
+      '<span style="font-size:1.2em">' + fracHTML(n0, d0) + ' = ?</span>',
+      '<div class="big-frac">' + fracHTML(n0, d0) + '</div>',
+      true, true);
+    $('answer-zone').innerHTML = fracEntryHTML(); wireBoxes();
+    return;
+  }
+}
+let hintWired = false;
+function wireHintOnce(){
+  if (hintWired) return; hintWired = true;
+  $('btn-hint').addEventListener('click', onHint);
+}
+
+/* ---------- checking ---------- */
+function onCheck(){
+  const key = steps[si].key, m = multParts(q);
+  const vals = boxVals();
+  if (vals.some(v => v === '')) return;
+  const nums = vals.map(Number);
+  let ok = false, softFail = false;
+  if (key === 'flip') ok = nums[0] === q.d && nums[1] === q.c;
+  else if (key === 'multTop') ok = nums[0] === m.x1 * m.x2;
+  else if (key === 'multBot') ok = nums[0] === m.y1 * m.y2;
+  else if (key === 'simplify'){
+    const ans = finalAnswer(q);
+    if (equiv(nums[0], nums[1], ans.n, ans.d)){
+      if (gcd(nums[0], nums[1]) === 1) ok = true;
+      else softFail = true; // right value, not fully simplified
+    }
+  }
+  if (softFail){
+    showOverlay('Almost there',
+      '<p>That\'s the right value — now simplify it <b>all the way</b> down!</p>',
+      [{ label:'Keep going', primary:true, onClick:() => {
+        Array.prototype.forEach.call($('answer-zone').querySelectorAll('.abox'), b => b.textContent = '');
+        wireBoxes();
+      }}]);
+    return;
+  }
+  recordStep(key, ok);
+  if (ok) nextStep();
+  else { wrongQ = true; showExplain(explainText(key)); }
+}
+
+/* ---------- parents ---------- */
+function showParents(){
+  let rows = '';
+  Object.keys(STEP_NAMES).forEach(k => {
+    const s = st(k);
+    const pct = s.a ? Math.round(100 * s.c / s.a) : null;
+    rows += '<div class="kv"><span>' + STEP_NAMES[k] + '</span><span>' +
+      (pct === null ? 'not tried yet' : pct + '% correct · ' + s.h + ' hint' + (s.h === 1 ? '' : 's')) + '</span></div>';
+  });
+  showOverlay('For parents',
+    '<div class="kv"><span>Stars earned</span><span>★ ' + S.stars + '</span></div>' +
+    '<div class="kv"><span>Best streak</span><span>' + S.bestStreak + '</span></div>' +
+    '<div class="kv"><span>Rounds played</span><span>' + S.rounds + '</span></div>' +
+    '<h4 style="margin:.8em 0 .2em">Remy — per step</h4>' + rows +
+    '<p class="device-note">Progress is saved only on this device.</p>',
+    [
+      { label:'Reset progress', onClick:confirmReset },
+      { label:'Close', primary:true }
+    ]);
+}
+function confirmReset(){
+  showOverlay('Reset progress?',
+    '<p>This erases stars, streaks, and all stats on this device. Are you sure?</p>',
+    [
+      { label:'Yes, erase everything', onClick:() => { S = blankStore(); save(); updatePills(); } },
+      { label:'Keep my progress', primary:true }
+    ]);
+}
+
+/* ---------- init ---------- */
+function init(){
+  updatePills();
+  document.querySelectorAll('button.level').forEach(b => {
+    if (b.disabled) return;
+    b.addEventListener('click', () => { level = b.dataset.level; startRound(); });
+  });
+  $('btn-back').addEventListener('click', () => showScreen('start'));
+  $('btn-check').addEventListener('click', onCheck);
+  $('btn-parents-start').addEventListener('click', showParents);
+  $('pad').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || !selBox) return;
+    const k = b.dataset.k;
+    let v = selBox.textContent;
+    if (k === 'back') v = v.slice(0, -1);
+    else if (k === 'clear') v = '';
+    else if (v.length < 3) v += k;
+    selBox.textContent = v;
+  });
+  showScreen('start');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

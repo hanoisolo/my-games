@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F7F4EE">
+<link rel="icon" href="data:,">
+<title>Slice &amp; Solve — Fractions Practice Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:light dark;
+--bg:#F7F4EE;--surface:#FFFFFF;--ink:#24313B;--ink2:#5C6B76;--faint:#8A97A3;
+--line:#E5DECF;--accent:#157B7E;--accent-h:#0F5C5E;--on-accent:#FFFFFF;--accent-soft:#E1EFEF;
+--amber:#B97A14;--amber-fill:#E9A33B;--good:#2E7D4F;--good-bg:#E3F1E8;
+--bad:#A83A52;--bad-bg:#F8E8EC;
+--bar-empty:#ECE5D6;--bar-fill:#4AA3A6;--bar-ans-empty:#F2E8D6;--bar-ans:#E9A33B;
+--shadow:0 1px 2px rgba(35,45,50,.05),0 10px 28px rgba(35,45,50,.07);
+--r:18px}
+@media(prefers-color-scheme:dark){
+:root{--bg:#0F1618;--surface:#172121;--ink:#E9EFEF;--ink2:#A9B8B9;--faint:#7E8F90;
+--line:#263334;--accent:#6FC7C3;--accent-h:#8FD9D5;--on-accent:#0B1415;--accent-soft:#1D3131;
+--amber:#EFC26E;--amber-fill:#E9A33B;--good:#7CC79B;--good-bg:#1C2F25;
+--bad:#E08CA0;--bad-bg:#33232A;
+--bar-empty:#243133;--bar-fill:#4FA8A4;--bar-ans-empty:#332C1E;--bar-ans:#E9A33B;
+--shadow:0 1px 2px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.3)}}
+html,body{margin:0;padding:0}
+body{font-family:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;line-height:1.45}
+button{font-family:inherit;cursor:pointer}
+.screen{display:none}
+.screen.on{display:block}
+.hidden{display:none!important}
+.ic{width:22px;height:22px;fill:currentColor;flex:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+/* ---------- start screen ---------- */
+.startwrap{max-width:580px;margin:0 auto;padding:28px 20px 40px;min-height:100dvh;display:flex;flex-direction:column}
+.brandline{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--faint);font-weight:600;letter-spacing:.02em;font-size:15px;margin-bottom:26px}
+.brandline .ic{width:26px;height:26px}
+h1{font-size:clamp(30px,7vw,40px);margin:0 0 6px;font-weight:700;letter-spacing:-.01em;text-align:center}
+h2{font-size:clamp(24px,6vw,30px);margin:0 0 8px;font-weight:700;text-align:center}
+.sub{text-align:center;color:var(--ink2);margin:0 0 22px;font-size:16px}
+.levels{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.level{text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;display:flex;flex-direction:column;gap:4px;color:inherit;transition:border-color .2s ease,transform .15s ease}
+.level:active{transform:scale(.99)}
+.level[aria-pressed="true"]{border-color:var(--accent);box-shadow:var(--shadow)}
+.lv-row{display:flex;align-items:center;gap:8px}
+.lv-name{font-size:21px;font-weight:700}
+.lv-tag{font-size:13px;font-weight:600;color:var(--accent-h);background:var(--accent-soft);border-radius:999px;padding:3px 10px;white-space:nowrap}
+@media(prefers-color-scheme:dark){.lv-tag{color:var(--accent)}}
+.lv-badge{font-size:12px;font-weight:600;color:var(--amber);background:var(--bar-ans-empty);border-radius:999px;padding:3px 10px;white-space:nowrap;margin-left:auto}
+.lv-badge.soon{color:var(--ink2);background:var(--bar-empty)}
+.level[disabled]{cursor:not-allowed}
+.level[disabled]:active{transform:none}
+.lv-blurb{font-size:14.5px;color:var(--ink2)}
+.lv-meta{font-size:13px;color:var(--faint);margin-top:2px}
+.lv-stats{font-weight:600;color:var(--amber)}
+.btn{width:100%;padding:16px;font-size:18px;font-weight:600;border:none;border-radius:14px;background:var(--accent);color:var(--on-accent);transition:background .15s ease,transform .12s ease}
+.btn:hover{background:var(--accent-h)}
+.btn:active{transform:scale(.99)}
+.btn.big{margin-bottom:14px}
+.btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink);margin-top:10px}
+.btn.ghost:hover{border-color:var(--accent)}
+.startrow{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.quiet{background:none;border:none;color:var(--ink2);font-size:15px;font-weight:500;display:inline-flex;align-items:center;gap:6px;padding:10px 6px}
+.quiet:hover{color:var(--ink)}
+.quiet .ic{width:20px;height:20px}
+.quiet.danger{color:var(--bad)}
+.spk .offline{display:none}
+.spk.muted .offline{display:block}
+.spk.muted .waves{display:none}
+.how{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.how summary{font-weight:600;padding:12px 0;cursor:pointer}
+.how ul{margin:4px 0 14px;padding-left:20px;color:var(--ink2);font-size:14.5px}
+.how li{margin-bottom:6px}
+.tiny{font-size:13px;color:var(--faint)}
+.center{text-align:center}
+.footnote{margin-top:auto;padding-top:30px;text-align:center}
+
+/* ---------- round screen ---------- */
+.roundcol{min-height:100dvh;display:flex;flex-direction:column}
+.roundcol.has-pad .wrap{padding-bottom:320px}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:6px;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px}
+.tbtn{background:none;border:none;color:var(--ink2);width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px}
+.tbtn:hover{color:var(--ink);background:var(--accent-soft)}
+.tmid{flex:1;display:flex;flex-direction:column;line-height:1.2}
+.t-level{font-weight:700;font-size:16px}
+.t-q{font-size:13px;color:var(--faint)}
+.tstats{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:15px;color:var(--amber)}
+.pill .ic{width:18px;height:18px}
+.pill.streak{color:var(--accent)}
+@media(prefers-color-scheme:dark){.pill.streak{color:var(--accent)}}
+.wrap{flex:1;width:100%;max-width:660px;margin:0 auto;padding:14px 18px 20px}
+.stepbar{margin-bottom:8px}
+.stepseg{display:flex;gap:6px;margin-bottom:6px}
+.sseg{flex:1;height:6px;border-radius:4px;background:var(--bar-empty)}
+.sseg.done{background:var(--accent)}
+.stepname{font-size:13.5px;color:var(--ink2);font-weight:500;text-align:center}
+.exprwrap{text-align:center;margin:14px 0 10px}
+.expr{font-size:clamp(30px,8.5vw,42px);font-weight:600;line-height:1.5}
+.expr .op{margin:0 .35em;font-weight:600;color:var(--ink2)}
+.expr .qmark{color:var(--faint)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .1em;line-height:1.15}
+.frac .ft,.frac .fb{padding:0 .18em}
+.frac .fr{height:2px;background:currentColor;width:100%;border-radius:2px;opacity:.7}
+.mix{display:inline-flex;align-items:center;gap:.18em;vertical-align:middle}
+.mix .mw{font-size:.92em}
+
+/* fraction bars */
+.bars{margin:6px 0 16px}
+.bars-swap{transition:opacity .26s ease}
+.bars-swap.swapping{opacity:0}
+.tgroup{margin-bottom:10px}
+.bar{position:relative;display:flex;height:30px;border-radius:10px;overflow:hidden;background:var(--bar-empty);border:1px solid var(--line)}
+.bar + .bar{margin-top:6px}
+.bar.wholebar{height:14px}
+.seg{flex:1 1 0;min-width:0}
+.seg.on{background:var(--bar-fill)}
+.bar.answerbar{background:var(--bar-ans-empty);height:36px}
+.bar.answerbar .seg.on{background:var(--bar-ans)}
+.bar.tappable{cursor:pointer}
+.bar.tappable .seg{border-left:1px solid rgba(0,0,0,.05)}
+.tcap{font-size:13.5px;color:var(--ink2);margin:5px 0 12px;text-align:center}
+.tcap b{color:var(--ink)}
+
+/* prompt panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.p-title{font-size:19px;font-weight:700;margin:0 0 6px}
+.p-sub{margin:0 0 8px;color:var(--ink2);font-size:16px}
+.p-sub b{color:var(--ink)}
+.opts{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.opt{padding:18px;font-size:28px;font-weight:700;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);transition:border-color .15s ease,background .15s ease}
+.opt:hover{border-color:var(--accent)}
+.opt:disabled{opacity:.9;cursor:default}
+.opt.correct{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.rrows{display:flex;flex-direction:column;gap:4px;margin:10px 0 6px}
+.rrow{display:flex;align-items:center;justify-content:center;gap:10px;font-size:24px;padding:6px 0;flex-wrap:wrap}
+
+/* hints */
+.p-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
+.p-head .p-title{margin:0;flex:1 1 auto}
+.starnote{font-size:12.5px;color:var(--faint);text-align:right;margin:3px 0 4px}
+.nudge{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:42px;padding:6px 13px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:var(--ink2);font-size:14px;font-weight:600;transition:border-color .15s ease}
+.nudge:hover{border-color:var(--accent);color:var(--ink)}
+.nudge .ic{width:18px;height:18px}
+.hintbox{background:var(--accent-soft);border-radius:14px;padding:10px 14px 12px;margin:10px 0 6px;font-size:15.5px;scroll-margin-top:72px;scroll-margin-bottom:360px}
+.hintbox p{margin:6px 0}
+.htier{font-weight:700;font-size:13.5px;color:var(--ink2);margin-top:10px}
+.htier:first-child{margin-top:4px}
+.hintbtns{display:flex;gap:8px;margin-top:10px}
+.hbtn{flex:1;min-height:44px;border-radius:12px;font-size:15px;font-weight:600;border:1.5px solid var(--accent);background:var(--surface);color:var(--ink);padding:8px 10px}
+.hbtn.primary{background:var(--accent);color:var(--on-accent)}
+.mlist{margin:8px 0}
+.mrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:5px 0}
+.mlab{font-weight:700;font-size:14px;min-width:38px}
+.mchip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:14px;font-variant-numeric:tabular-nums}
+.mchip.shared{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.mel{color:var(--faint);padding:0 4px;font-size:14px}
+.rterm{font-weight:600;min-width:64px;text-align:right}
+.rden{font-weight:600}
+.rhint{text-align:center;font-size:13.5px;color:var(--faint);margin:0 0 8px;padding:0 8px}
+.phint{text-align:center;font-size:13px;color:var(--faint);margin:8px 0 12px}
+.foundline{text-align:center;font-size:32px;font-weight:600;margin:8px 0 4px}
+.field{min-width:66px;min-height:56px;display:inline-flex;align-items:center;justify-content:center;border:2px dashed var(--accent);border-radius:12px;font-size:28px;font-weight:700;cursor:pointer;padding:0 12px;color:var(--ink);background:transparent;user-select:none;-webkit-user-select:none}
+.field.filled{border-style:solid}
+.field.active{box-shadow:0 0 0 4px var(--accent-soft)}
+.field .fv{pointer-events:none}
+.sfrac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1}
+.sfrac .sr{height:2px;background:currentColor;width:100%;border-radius:2px;opacity:.7;margin:4px 0}
+
+/* number pad */
+.padbar{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:10px 0 calc(12px + env(safe-area-inset-bottom))}
+#padbtn{margin-bottom:8px;background:var(--bg);border-radius:8px}
+#padbtn .btn{padding:13px;margin:0}
+#pferr{color:var(--bad);font-size:14.5px;text-align:center;margin:0 0 8px;font-weight:600}
+.padwrap{max-width:660px;margin:0 auto;padding:0 18px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{min-height:56px;font-size:23px;font-weight:600;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);transition:transform .1s ease,background .12s ease}
+.pad button:active{transform:scale(.96)}
+.pad button.pfn{color:var(--ink2);font-size:20px}
+
+/* confirm + solved + explanation */
+.confirm,.solved{text-align:center;padding:8px 4px}
+.confirm .ic,.solved .bigstar{width:44px;height:44px;color:var(--good);margin:0 auto 6px}
+.solved .bigstar{color:var(--amber-fill)}
+.confirm p{font-size:17px;margin:6px 0 16px}
+.solved h3{margin:0 0 4px;font-size:22px}
+.solved .sline{font-size:16px;color:var(--ink2);margin:0 0 8px}
+.solved .sline b{color:var(--ink)}
+.note{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14.5px;color:var(--ink);margin:10px 0;text-align:left}
+.stline{font-size:14px;color:var(--ink2);margin:0 0 16px}
+.exhead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.exhead .ic{width:30px;height:30px;color:var(--amber-fill)}
+.exhead h2{text-align:left;font-size:22px;margin:0}
+.exbody{font-size:16px}
+.exbody p{margin:10px 0}
+.work{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:17px}
+.wrow{margin:4px 0}
+.wl{color:var(--ink2);font-weight:600}
+.ex-note{font-size:14px;color:var(--ink2)}
+.ex-note-static{text-align:center;font-size:14px;color:var(--ink2);margin:14px 0}
+
+/* summary */
+.sumstar{text-align:center;margin:6px 0 10px}
+.sumstar .ic{width:56px;height:56px;color:var(--amber-fill)}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.stat .sv{font-size:26px;font-weight:700}
+.stat .sl{font-size:13px;color:var(--ink2);margin-top:2px}
+
+/* parents */
+.parehead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.parehead h2{margin:0;text-align:left;flex:1}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.pcard h3{margin:0 0 10px;font-size:19px;display:flex;align-items:center;gap:8px}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.pkv .pvv{font-size:19px;font-weight:700}
+.pkv .pll{font-size:11.5px;color:var(--ink2)}
+.trow{display:grid;grid-template-columns:1fr 1fr 64px;align-items:center;gap:8px;padding:6px 0;font-size:14px;border-top:1px solid var(--line)}
+.trow .tpct{text-align:right;font-weight:700;line-height:1.2}
+.trow .thsub{display:block;font-size:11.5px;font-weight:400;color:var(--faint)}
+.meter{height:8px;border-radius:5px;background:var(--bar-empty);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:5px}
+
+@media(max-width:420px){.pgrid{grid-template-columns:repeat(3,1fr)}.field{min-width:60px}.exprwrap{margin:8px 0 6px}.bars{margin:4px 0 10px}.tgroup{margin-bottom:6px}.tcap{margin:3px 0 8px}.panel{padding:14px 16px}.phint{margin:6px 0 8px}.padbar{padding-top:6px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main id="app">
+
+<!-- START SCREEN -->
+<section id="screenStart" class="screen on" aria-labelledby="hStart">
+  <div class="startwrap">
+    <div class="brandline">
+      <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 12h9a9 9 0 0 0-9-9z" fill="currentColor" opacity=".95"/><path d="M12 12A9 9 0 0 0 3 12z" fill="currentColor" opacity=".5"/><path d="M12 12v9a9 9 0 0 0 9-9z" fill="currentColor" opacity=".28"/></svg>
+      <span>Slice &amp; Solve</span>
+    </div>
+    <h1 id="hStart">Who's playing?</h1>
+    <p class="sub">This pilot is Remy's level — tap Start when you're ready. Every question is patient with you: no timers, no lives.</p>
+    <div class="levels" role="group" aria-label="Choose your level">
+      <!-- Pilot lock: remove class "coming-soon" and the disabled attribute to make this level playable -->
+      <button type="button" class="level coming-soon" data-level="adeline" aria-pressed="false" disabled>
+        <span class="lv-row"><span class="lv-name">Adeline</span><span class="lv-tag">Gentle start</span><span class="lv-badge soon">Coming soon</span></span>
+        <span class="lv-blurb">Starts with easy same-bottom fractions, then simple unlike ones — halves, thirds, quarters. Sums stay under 1.</span>
+        <span class="lv-meta">Feels like grades 4–5</span>
+      </button>
+      <button type="button" class="level" data-level="remi" aria-pressed="true">
+        <span class="lv-row"><span class="lv-name">Remy</span><span class="lv-tag">Grade 7 core</span><span class="lv-badge">Selected</span></span>
+        <span class="lv-blurb">Unlike denominators from 2 to 12 — spot the common denominator first. Some answers need mixed numbers.</span>
+        <span class="lv-meta">Feels like grade 7 · <span class="lv-stats" data-s="remi">no rounds yet</span></span>
+      </button>
+      <!-- Pilot lock: remove class "coming-soon" and the disabled attribute to make this level playable -->
+      <button type="button" class="level coming-soon" data-level="seline" aria-pressed="false" disabled>
+        <span class="lv-row"><span class="lv-name">Seline</span><span class="lv-tag">Challenge</span><span class="lv-badge soon">Coming soon</span></span>
+        <span class="lv-blurb">Bigger denominators, three-part expressions like a + b − c, plus mixed numbers inside the questions.</span>
+        <span class="lv-meta">Feels like grade 9+</span>
+      </button>
+    </div>
+    <button type="button" class="btn big" id="btnStart">Start with Remy</button>
+    <div class="startrow">
+      <button type="button" class="quiet" id="btnSound" aria-label="Toggle sound">
+        <svg viewBox="0 0 24 24" class="ic spk muted" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><g class="waves"><path d="M16.5 8.6a5 5 0 0 1 0 6.8M18.8 6a8.6 8.6 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g><g class="offline"><path d="M16 9l7 7M23 9l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g></svg>
+        <span id="soundLbl">Sound off</span>
+      </button>
+      <button type="button" class="quiet" id="btnParents">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3z"/></svg>
+        For parents
+      </button>
+    </div>
+    <details class="how">
+      <summary>How it works</summary>
+      <ul>
+        <li>Every question walks you through the steps: pick the common denominator, rename the numerators, then combine and simplify.</li>
+        <li>No timers and no lives. A wrong step just brings a kind explanation and a similar question to try.</li>
+        <li>A star for every question solved with no hints and no wrong steps; streaks build quietly as you go.</li>
+        <li>Stuck? Tap <b>Need a nudge?</b> on any step — each step has two hints that guide you without giving away the answer.</li>
+        <li>The other levels are on the way — for now, this pilot is Remy's level.</li>
+      </ul>
+    </details>
+    <p class="footnote tiny">Progress is saved only on this device.</p>
+  </div>
+</section>
+
+<!-- ROUND SCREEN -->
+<section id="screenRound" class="screen" aria-label="Question">
+  <div class="roundcol">
+    <header class="topbar">
+      <button type="button" class="tbtn" id="btnMenu" aria-label="Back to player select">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="tmid"><span class="t-level" id="tLevel">Remy</span><span class="t-q" id="tQ">Question 1 of 8</span></div>
+      <div class="tstats">
+        <span class="pill" id="pillStars" title="Stars earned">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.7.7-5 4.5 1.4 6.6L12 17l-6 3.5 1.4-6.6-5-4.5 6.7-.7z"/></svg>
+          <span id="starN">0</span>
+        </span>
+        <span class="pill streak hidden" id="pillStreak" title="Current streak">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2l1.8 6.4L20.2 10l-6.4 1.8L12 18.2l-1.8-6.4L3.8 10l6.4-1.6z"/></svg>
+          <span id="streakN">0</span>
+        </span>
+        <button type="button" class="tbtn" id="btnSound2" aria-label="Toggle sound">
+          <svg viewBox="0 0 24 24" class="ic spk muted" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><g class="waves"><path d="M16.5 8.6a5 5 0 0 1 0 6.8M18.8 6a8.6 8.6 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g><g class="offline"><path d="M16 9l7 7M23 9l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g></svg>
+        </button>
+      </div>
+    </header>
+    <div class="wrap">
+      <div class="stepbar"><div class="stepseg" id="stepSeg"></div><div class="stepname" id="stepName"></div></div>
+      <div class="exprwrap"><div class="expr" id="expr" aria-live="polite"></div></div>
+      <div class="bars bars-swap" id="bars"></div>
+      <div class="panel" id="prompt"></div>
+    </div>
+    <div class="padbar hidden" id="padbar">
+      <div class="padwrap">
+        <div id="padbtn"><p class="hidden" id="pferr"></p></div>
+        <div class="pad" id="pad" aria-label="Number pad">
+          <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+          <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+          <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+          <button type="button" data-k="clear" class="pfn" aria-label="Clear">C</button><button type="button" data-k="0">0</button><button type="button" data-k="back" class="pfn" aria-label="Delete">&#9003;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLANATION SCREEN -->
+<section id="screenExplain" class="screen" aria-label="Explanation">
+  <div class="roundcol">
+    <header class="topbar">
+      <button type="button" class="tbtn" id="btnMenu2" aria-label="Back to player select">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="tmid"><span class="t-level">Pause &amp; learn</span><span class="t-q" id="tQ2"></span></div>
+      <div class="tstats"></div>
+    </header>
+    <div class="wrap" style="max-width:560px">
+      <div class="panel">
+        <div class="exhead">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4.07 12.72c.62.48 1.07 1.36 1.07 2.28h6c0-.92.45-1.8 1.07-2.28A7 7 0 0 0 12 2zM9 20h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 21.5z"/></svg>
+          <h2>No worries — here's how</h2>
+        </div>
+        <div class="exbody" id="exBody"></div>
+        <p class="ex-note-static">Mistakes are part of learning. A similar question is up next.</p>
+        <button type="button" class="btn" id="btnRetry">Try a similar question</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUMMARY SCREEN -->
+<section id="screenSummary" class="screen" aria-label="Round summary">
+  <div class="startwrap">
+    <div class="sumstar">
+      <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.7.7-5 4.5 1.4 6.6L12 17l-6 3.5 1.4-6.6-5-4.5 6.7-.7z"/></svg>
+    </div>
+    <h2>Round complete</h2>
+    <p class="sub" id="sumLine"></p>
+    <div class="statgrid" id="sumStats"></div>
+    <button type="button" class="btn" id="btnAgain">Another round</button>
+    <button type="button" class="btn ghost" id="btnChange">Change player</button>
+  </div>
+</section>
+
+<!-- FOR PARENTS SCREEN -->
+<section id="screenParents" class="screen" aria-label="For parents">
+  <div class="startwrap" style="max-width:640px">
+    <div class="parehead">
+      <button type="button" class="quiet" id="btnPBack">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <h2>For parents</h2>
+    </div>
+    <p class="sub" style="text-align:left" id="pareNote">How each player is doing, by step of the method. Stored only on this device.</p>
+    <div id="parentList"></div>
+    <button type="button" class="quiet danger" id="btnReset">Reset all saved progress</button>
+    <p class="tiny" id="resetNote" hidden>Tap again to confirm — this clears every star and streak on this device.</p>
+  </div>
+</section>
+
+</main>
+<script>
+'use strict';
+/* ===PURE_BLOCK_START=== */
+/* Pure math + question generation. No DOM, no storage, no browser APIs.
+   Extractable and testable in node. */
+
+/* ---------- integers ---------- */
+function pgcd(a,b){a=Math.abs(Math.trunc(a));b=Math.abs(Math.trunc(b));while(b){var t=a%b;a=b;b=t}return a||1}
+function plcm(a,b){return Math.abs(a*b)/pgcd(a,b)}
+function plcmN(arr){return arr.reduce(function(x,y){return plcm(x,y)},1)}
+function mulberry(seed){var s=(seed>>>0)||1;return function(){s|=0;s=(s+0x6D2B79F5)|0;var t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296}}
+function rint(r,lo,hi){return lo+Math.floor(r()*(hi-lo+1))}
+function rpick(r,arr){return arr[Math.floor(r()*arr.length)]}
+function rshuffle(r,arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+/* ---------- denominator pools ---------- */
+var PAIRS_AD=[[2,4],[2,3],[3,4],[2,6],[3,6],[2,8],[4,8]];
+var PAIRS_REMI=[];(function(){for(var a=2;a<=12;a++){for(var b=a+1;b<=12;b++){if(plcm(a,b)<=24)PAIRS_REMI.push([a,b])}}})();
+var PAIRS_IVY=[];(function(){for(var a=4;a<=15;a++){for(var b=a+1;b<=15;b++){var L=plcm(a,b);if(L<=60&&Math.max(a,b)>=8)PAIRS_IVY.push([a,b])}}})();
+var POOL_IVY3=[2,3,4,5,6,8,10,12,15];
+var OP3=[['+','+'],['+','-'],['-','+']];
+
+function propTerm(r,d){return{w:0,n:rint(r,1,d-1),d:d}}
+function mixTerm(r,d){return{w:rint(r,1,2),n:rint(r,1,d-1),d:d}}
+
+/* ---------- step-1 multiple choice (LCD + 2 distractors) ---------- */
+function step1Options(r,cd,dens){
+  var prod=1,i;for(i=0;i<dens.length;i++)prod*=dens[i];
+  var cands=[prod,cd*2,cd+1,cd-1,cd+2,cd+3,cd+10];
+  for(i=0;i<dens.length;i++){if(dens[i]!==cd)cands.push(dens[i])}
+  var seen={};seen[cd]=true;var picks=[];
+  for(i=0;i<cands.length&&picks.length<2;i++){
+    var c=Math.trunc(cands[i]);
+    if(c>=2&&c!==cd&&!seen[c]){seen[c]=true;picks.push(c)}
+  }
+  return rshuffle(r,[cd].concat(picks));
+}
+
+/* ---------- simplify + equivalence ---------- */
+/* canonOf: normalize ANY entered form to canonical {w,n,d} */
+function canonOf(f){
+  if(f.d<=0)return null;
+  var total=f.w*f.d+f.n,den=f.d;
+  var g=pgcd(total,den),rn=total/g,rd=den/g;
+  return{w:Math.floor(rn/rd),n:rn%rd,d:rd};
+}
+function simplifyFrac(raw,cd){
+  if(cd<=0||raw<=0)return{w:0,n:0,d:1,isZero:true};
+  var g=pgcd(raw,cd),rn=raw/g,rd=cd/g;
+  if(rn%rd===0)return{w:rn/rd,n:0,d:1,wholeOnly:true};
+  return{w:Math.floor(rn/rd),n:rn%rd,d:rd};
+}
+function equalFrac(a,b){
+  if(a.d<=0||b.d<=0)return false;
+  return (a.w*a.d+a.n)*b.d===(b.w*b.d+b.n)*a.d;
+}
+/* parseEntry: vals = {w,n,d} digit strings -> {ok,f} or {error} */
+function parseEntry(vals){
+  var out={};
+  var parts=['w','n','d'];
+  for(var i=0;i<3;i++){
+    var k=parts[i],v=vals[k];
+    if(v===undefined||v===null||v==='')return{error:'empty'};
+    v=String(v).trim();
+    if(!/^\d{1,6}$/.test(v))return{error:'bad'};
+    out[k]=parseInt(v,10);
+  }
+  if(out.d===0)return{error:'zero'};
+  return{ok:true,f:out};
+}
+function simplifyNeeded(q){
+  var raw=q.raw,cd=q.cd;
+  if(raw<=0)return false;
+  if(raw%cd===0)return true;   /* whole-number answer */
+  if(raw>cd)return true;        /* improper -> mixed form */
+  return pgcd(raw,cd)>1;        /* reducible proper */
+}
+
+/* ---------- question assembly ---------- */
+function finishQ(level,kind,terms,ops){
+  var dens=terms.map(function(t){return t.d});
+  var cd=plcmN(dens);
+  var renamed=terms.map(function(t){return t.w*cd+t.n*(cd/t.d)});
+  var raw=renamed[0];
+  for(var i=0;i<ops.length;i++){raw=ops[i]==='+'?raw+renamed[i+1]:raw-renamed[i+1]}
+  var simp=simplifyFrac(raw,cd);
+  return{level:level,kind:kind,terms:terms,ops:ops,cd:cd,renamed:renamed,raw:raw,simp:simp,
+    retry:{level:level,kind:kind,dens:(kind==='same2'?[dens[0],dens[0]]:dens.slice()),ops:ops.slice(),warmup:kind==='same2'}};
+}
+function canonicalKey(q){
+  return q.level+'|'+q.kind+'|'+q.terms.map(function(t){return t.w+'_'+t.n+'/'+t.d}).join('|')+'|'+q.ops.join(',');
+}
+function attachOptions(r,q){
+  q.cdOptions=step1Options(r,q.cd,q.terms.map(function(t){return t.d}));
+  return q;
+}
+
+/* ---------- term samplers ---------- */
+function samplePropPair(r,d,op){ /* Adeline warm-up: same denominator, proper positive result */
+  for(var t=0;t<80;t++){
+    var t1=propTerm(r,d),t2=propTerm(r,d),ok;
+    if(op==='+')ok=(t1.n+t2.n)<d;else ok=t1.n>t2.n;
+    if(ok)return[t1,t2];
+  }
+  return null;
+}
+function samplePropPairU(r,d1,d2,op,level){ /* unlike pair, proper positive result */
+  for(var t=0;t<80;t++){
+    var t1=propTerm(r,d1),t2=propTerm(r,d2),ok;
+    if(op==='+'){
+      if(level==='adeline')ok=(t1.n*d2+t2.n*d1)<d1*d2; /* sums under 1 */
+      else ok=true;
+    }else ok=t1.n*d2>t2.n*d1;
+    if(ok)return[t1,t2];
+  }
+  return null;
+}
+function sampleTri(r){
+  for(var t=0;t<80;t++){
+    var tri=rshuffle(r,POOL_IVY3).slice(0,3);
+    if(plcmN(tri)<=60)return tri;
+  }
+  return null;
+}
+function samplePropTriple(r,tri,ops){
+  var cd=plcmN(tri);
+  for(var t=0;t<80;t++){
+    var terms=[propTerm(r,tri[0]),propTerm(r,tri[1]),propTerm(r,tri[2])];
+    var rns=terms.map(function(x){return x.n*(cd/x.d)});
+    var raw=rns[0];
+    for(var i=0;i<ops.length;i++){raw=ops[i]==='+'?raw+rns[i+1]:raw-rns[i+1]}
+    if(raw>0)return terms;
+  }
+  return null;
+}
+function sampleMixedPair(r,d1,d2,op){ /* Seline mixed-number terms, positive result */
+  for(var t=0;t<80;t++){
+    var t1=mixTerm(r,d1),t2=mixTerm(r,d2),ok;
+    if(op==='+')ok=true;
+    else ok=(t1.w*d1+t1.n)*d2>(t2.w*d2+t2.n)*d1;
+    if(ok)return[t1,t2];
+  }
+  return null;
+}
+
+function trySpec(r,level,spec){
+  var kind=spec.kind,ops=spec.ops,dens=spec.dens,terms=null;
+  if(kind==='same2'){
+    /* d=2 is impossible under the warm-up constraints (no valid numerator pairs) */
+    var d=dens?dens[0]:rpick(r,[3,4,5,6,8]);
+    terms=samplePropPair(r,d,ops[0]);
+    if(!terms)return null;
+  }else if(kind==='unlike2'){ /* Adeline or Remy */
+    var p=dens?dens.slice():rpick(r,level==='adeline'?PAIRS_AD:PAIRS_REMI);
+    if(!dens&&r()<0.5)p=[p[1],p[0]];
+    terms=samplePropPairU(r,p[0],p[1],ops[0],level);
+    if(!terms)return null;
+  }else if(kind==='unlike2x'){ /* Seline: larger denominators */
+    var p2=dens?dens.slice():rpick(r,PAIRS_IVY);
+    if(!dens&&r()<0.5)p2=[p2[1],p2[0]];
+    terms=samplePropPairU(r,p2[0],p2[1],ops[0],level);
+    if(!terms)return null;
+  }else if(kind==='unlike3'){ /* Seline: three-term */
+    var tri=dens?dens.slice():sampleTri(r);
+    if(!tri)return null;
+    terms=samplePropTriple(r,tri,ops);
+    if(!terms)return null;
+  }else if(kind==='mixed2'){ /* Seline: mixed numbers inside */
+    var p3=dens?dens.slice():rpick(r,PAIRS_REMI);
+    if(!dens&&r()<0.5)p3=[p3[1],p3[0]];
+    terms=sampleMixedPair(r,p3[0],p3[1],ops[0]);
+    if(!terms)return null;
+  }else return null;
+  return attachOptions(r,finishQ(level,kind,terms,ops));
+}
+
+/* makeQuestion: spec = {kind, ops:[...], dens:null|[...]}
+   asked = Set of canonical keys to avoid repeating */
+function makeQuestion(r,level,spec,asked){
+  /* Variants: exact (possibly denominator-pinned) spec first, then the same
+     kind+ops with any level-appropriate denominators. Retries stay similar
+     but never return an identical question while fresh ones exist. */
+  var variants=[spec];
+  if(spec.dens)variants.push({kind:spec.kind,ops:spec.ops,dens:null});
+  for(var v=0;v<variants.length;v++){
+    for(var a=0;a<80;a++){
+      var q=trySpec(r,level,variants[v]);
+      if(!q)continue;
+      if(asked&&asked.has(canonicalKey(q)))continue;
+      return q;
+    }
+  }
+  /* Last resort (only when every key space examined is exhausted): any valid
+     question rather than nothing. UI guards against null too. */
+  for(var v2=0;v2<variants.length;v2++){
+    var fq=trySpec(r,level,variants[v2]);
+    if(fq)return fq;
+  }
+  return null;
+}
+
+/* roundPlan: 8 question specs per level */
+function roundPlan(r,level){
+  var plan=[],i;
+  if(level==='adeline'){
+    var ops=rshuffle(r,['+','+','+','-','-']);
+    for(i=0;i<3;i++)plan.push({kind:'same2',ops:[i%2?'-':'+'],dens:null}); /* warm-ups */
+    for(var k=0;k<5;k++)plan.push({kind:'unlike2',ops:[ops[k]],dens:null});
+  }else if(level==='remi'){
+    var ops2=rshuffle(r,['+','+','+','+','-','-','-','-']);
+    for(i=0;i<8;i++)plan.push({kind:'unlike2',ops:[ops2[i]],dens:null});
+  }else{
+    var kinds=rshuffle(r,['unlike2x','mixed2','unlike3']);
+    for(i=0;i<8;i++){
+      var kind=kinds[i%3];
+      var o=kind==='unlike3'?rpick(r,OP3).slice():[rpick(r,['+','-'])];
+      plan.push({kind:kind,ops:o,dens:null});
+    }
+  }
+  return plan;
+}
+/* ===PURE_BLOCK_END=== */
+
+/* ================= UI layer (DOM) ================= */
+var SVG={
+  star:'<svg viewBox="0 0 24 24" class="ic bigstar" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.7.7-5 4.5 1.4 6.6L12 17l-6 3.5 1.4-6.6-5-4.5 6.7-.7z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.3 14.1l-3.9-3.9 1.4-1.4 2.5 2.5 6.1-6.1 1.4 1.4z"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4.07 12.72c.62.48 1.07 1.36 1.07 2.28h6c0-.92.45-1.8 1.07-2.28A7 7 0 0 0 12 2zM9 20h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 21.5z"/></svg>'
+};
+var NAMES={adeline:'Adeline',remi:'Remy',seline:'Seline'};
+var TOPIC_LABELS={denominator:'Common denominators',rename:'Renaming numerators',combine:'Combining',simplify:'Simplifying'};
+var STEPDEF={denominator:{i:0,t:'Pick the common denominator'},rename:{i:1,t:'Rename the numerators'},combine:{i:2,t:'Combine & simplify'},simplify:{i:2,t:'Combine & simplify'}};
+
+function el(id){return document.getElementById(id)}
+
+/* ---------- storage ---------- */
+var LS_KEY='sliceandsolve.v1';
+function blankSteps(){return{a:0,c:0,hints:0}}
+function blankStats(){return{stars:0,bestStreak:0,rounds:0,attempted:0,perfect:0,steps:{denominator:blankSteps(),rename:blankSteps(),combine:blankSteps(),simplify:blankSteps()}}}
+function blankStore(){return{v:1,sound:false,levels:{adeline:blankStats(),remi:blankStats(),seline:blankStats()}}}
+var store=blankStore(),storageOK=true;
+try{var _raw=localStorage.getItem(LS_KEY);if(_raw){var _s=JSON.parse(_raw);if(_s&&_s.levels&&_s.levels.remi)store=_s}}catch(e){storageOK=false}
+/* additive migration: older saves lack steps.*.hints */
+(function(){
+  ['adeline','remi','seline'].forEach(function(k){
+    var L=store.levels&&store.levels[k];
+    if(!L||!L.steps)return;
+    Object.keys(L.steps).forEach(function(t){
+      if(L.steps[t]&&typeof L.steps[t].hints!=='number')L.steps[t].hints=0;
+    });
+  });
+})();
+function save(){try{if(storageOK)localStorage.setItem(LS_KEY,JSON.stringify(store))}catch(e){}}
+
+/* ---------- state ---------- */
+var state={screen:'screenStart',level:'remi',plan:[],idx:0,q:null,step:null,asked:new Set(),streak:0,roundStars:0,roundPerfect:0,stepLog:[],retrySpec:null,activeField:null,combineField:null,hintTier:0,hintUsed:false};
+var rng=mulberry(((Date.now()^(Math.random()*1e9))>>>0)||7);
+var reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- gentle sounds (off by default) ---------- */
+var AC=null;
+function play(kind){
+  if(!store.sound)return;
+  try{
+    var C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    AC=AC||new C();
+    if(AC.state==='suspended')AC.resume();
+    var t0=AC.currentTime+0.03;
+    function n(f,t,d,v){var o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+0.05)}
+    if(kind==='ok'){n(523.25,t0,0.5,0.055);n(783.99,t0+0.12,0.6,0.05)}
+    else if(kind==='star'){n(523.25,t0,0.4,0.055);n(659.25,t0+0.12,0.4,0.055);n(783.99,t0+0.24,0.7,0.055)}
+    else if(kind==='bad'){n(220,t0,0.35,0.045)}
+    else{n(440,t0,0.25,0.035)}
+  }catch(e){}
+}
+function renderSound(){
+  el('soundLbl').textContent=store.sound?'Sound on':'Sound off';
+  var svgs=document.querySelectorAll('.spk');
+  for(var i=0;i<svgs.length;i++)svgs[i].classList.toggle('muted',!store.sound);
+}
+function toggleSound(){store.sound=!store.sound;save();renderSound();if(store.sound)play('step')}
+
+/* ---------- screens ---------- */
+function show(id){
+  var ss=document.querySelectorAll('.screen');
+  for(var i=0;i<ss.length;i++)ss[i].classList.toggle('on',ss[i].id===id);
+  state.screen=id;window.scrollTo(0,0);
+}
+
+/* ---------- level select ---------- */
+function lvlLine(k){var st=store.levels[k];if(!st.attempted)return'no rounds yet';return st.stars+' stars · '+Math.round(100*st.perfect/st.attempted)+'% correct · best streak '+st.bestStreak}
+function updateLevelCards(){
+  var cards=document.querySelectorAll('.level');
+  for(var i=0;i<cards.length;i++){
+    var k=cards[i].dataset.level;
+    cards[i].setAttribute('aria-pressed',k===state.level?'true':'false');
+    var sts=cards[i].querySelector('.lv-stats');
+    if(sts)sts.textContent=lvlLine(k);
+  }
+  el('btnStart').textContent='Start with '+NAMES[state.level];
+}
+
+/* ---------- fraction rendering helpers ---------- */
+function exprOp(o){return o==='-'?'−':'+'}
+function fracHTML(n,d){return '<span class="frac"><span class="ft">'+n+'</span><span class="fr"></span><span class="fb">'+d+'</span></span>'}
+function termHTML(t){return t.w>0?'<span class="mix"><span class="mw">'+t.w+'</span>'+fracHTML(t.n,t.d)+'</span>':fracHTML(t.n,t.d)}
+function termText(t){return t.w>0?t.w+' '+t.n+'/'+t.d:t.n+'/'+t.d}
+function fracText(n,d){return n+'/'+d}
+function canonText(s){if(s.wholeOnly)return String(s.w);return s.w>0?s.w+' '+s.n+'/'+s.d:s.n+'/'+s.d}
+function listJoin(arr,conj){if(arr.length===2)return arr[0]+' and '+arr[1];return arr.slice(0,-1).join(', ')+', '+conj+' '+arr[arr.length-1]}
+function segsHTML(count,shaded,inter){
+  var s='';for(var i=0;i<count;i++)s+='<span class="seg'+(i<shaded?' on':'')+'"'+(inter?' data-i="'+i+'"':'')+'></span>';
+  return s;
+}
+function termGroupHTML(t,cd,reveal,ti){
+  var total=cd?(t.w*cd+t.n*(cd/t.d)):t.n;
+  var d=cd||t.d;
+  var h='<div class="tgroup">';
+  for(var k=0;k<t.w;k++)h+='<div class="bar wholebar" aria-hidden="true"><span class="seg on"></span></div>';
+  h+='<div class="bar" role="img" aria-label="fraction bar showing '+termText(t)+'">'+segsHTML(d,total-t.w*d,false)+'</div>';
+  var cap;
+  if(cd)cap=reveal?termText(t)+' = <b>'+total+'/'+cd+'</b>':termText(t)+' = <b>?/'+cd+'</b>';
+  else cap=termText(t);
+  h+='<div class="tcap">'+cap+'</div></div>';
+  return h;
+}
+
+/* ---------- rendering ---------- */
+function renderHeader(){
+  el('tLevel').textContent=NAMES[state.level];
+  el('tQ').textContent='Question '+(state.idx+1)+' of 8';
+  el('tQ2').textContent=NAMES[state.level]+' · Question '+(state.idx+1)+' of 8';
+  el('starN').textContent=store.levels[state.level].stars;
+  var show=state.streak>=2;
+  el('pillStreak').classList.toggle('hidden',!show);
+  el('streakN').textContent='×'+state.streak;
+}
+function renderSteps(){
+  var q=state.q;
+  if(q.kind==='same2'){
+    el('stepSeg').innerHTML='<div class="sseg done"></div>';
+    el('stepName').textContent='Warm-up — '+(q.ops[0]==='+'?'add the tops, bottoms stay':'subtract the tops, bottoms stay');
+    return;
+  }
+  var idx=STEPDEF[state.step].i;
+  var h='';
+  for(var i=0;i<3;i++)h+='<div class="sseg'+(i<=idx?' done':'')+'"></div>';
+  el('stepSeg').innerHTML=h;
+  el('stepName').textContent='Step '+(idx+1)+' of 3 · '+STEPDEF[state.step].t;
+}
+function exprOrig(q){
+  var parts=q.terms.map(termHTML);
+  var h=parts[0];
+  for(var i=0;i<q.ops.length;i++)h+=' <span class="op">'+exprOp(q.ops[i])+'</span> '+parts[i+1];
+  return h+' <span class="op">=</span> <span class="qmark">?</span>';
+}
+function exprRenamed(q){
+  var parts=q.renamed.map(function(r){return fracHTML(r,q.cd)});
+  var h=parts[0];
+  for(var i=0;i<q.ops.length;i++)h+=' <span class="op">'+exprOp(q.ops[i])+'</span> '+parts[i+1];
+  return h+' <span class="op">=</span> <span class="qmark">?</span>';
+}
+function renderExpr(){
+  var q=state.q,s=state.step;
+  if(s==='denominator'||s==='rename'||q.kind==='same2')el('expr').innerHTML=exprOrig(q);
+  else el('expr').innerHTML=exprRenamed(q);
+}
+function answerBarHTML(){
+  var interactive=state.level==='adeline'&&state.step==='combine';
+  var filled=state.step==='simplify'?state.q.raw:0;
+  return '<div class="tgroup"><div class="bar answerbar'+(interactive?' tappable':'')+'"'+(interactive?' data-interactive="1"':'')+' id="ansBar" role="img" aria-label="your answer bar">'+segsHTML(state.q.cd,filled,interactive)+'</div><div class="tcap">'+(state.step==='simplify'?'Your combined answer':(interactive?'Your answer bar — tap slices, or use the pad':'Your answer bar'))+'</div></div>';
+}
+function renderBars(){
+  var q=state.q,bars=el('bars'),s=state.step;
+  if(s==='denominator'){
+    bars.innerHTML=q.terms.map(function(t,i){return termGroupHTML(t,null,false,i)}).join('');
+  }else{
+    var reveal=s==='combine'||s==='simplify';
+    var h=q.terms.map(function(t,i){return termGroupHTML(t,q.cd,reveal,i)}).join('');
+    if(s==='combine'||s==='simplify')h+=answerBarHTML();
+    bars.innerHTML=h;
+  }
+}
+function showPad(on){
+  el('padbar').classList.toggle('hidden',!on);
+  if(!on){var b=el('btnSub');if(b)b.remove();padErrClear()}
+  var rc=el('screenRound').querySelector('.roundcol');
+  if(rc)rc.classList.toggle('has-pad',on);
+}
+function renderCheck(handler){
+  padErrClear();
+  el('padbtn').insertAdjacentHTML('beforeend','<button type="button" class="btn" id="btnSub">Check</button>');
+  el('btnSub').addEventListener('click',handler);
+}
+function padErr(msg){var e=el('pferr');if(!e)return;e.textContent=msg;e.classList.remove('hidden')}
+function padErrClear(){var e=el('pferr');if(e)e.classList.add('hidden')}
+
+/* ---------- number pad fields ---------- */
+function fieldHTML(fid,part,idx){
+  return '<span class="field" tabindex="0" role="textbox" aria-label="answer box" data-fid="'+fid+'" data-v=""'+(part?' data-part="'+part+'"':'')+(idx!==undefined?' data-idx="'+idx+'"':'')+'><span class="fv">?</span></span>';
+}
+function setField(f,v){
+  v=String(v).replace(/\D/g,'').slice(0,3);
+  f.dataset.v=v;
+  f.querySelector('.fv').textContent=v===''?'\u003F':v;
+  f.classList.toggle('filled',v!=='');
+}
+function setActive(f){
+  var olds=document.querySelectorAll('.field.active');
+  for(var i=0;i<olds.length;i++)olds[i].classList.remove('active');
+  state.activeField=f;
+  if(f)f.classList.add('active');
+}
+function wireFields(scope){
+  var fs=scope.querySelectorAll('.field');
+  for(var i=0;i<fs.length;i++){
+    (function(f){
+      f.addEventListener('click',function(){setActive(f)});
+      f.addEventListener('focus',function(){setActive(f)});
+      f.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();setActive(f)}});
+    })(fs[i]);
+  }
+  if(fs.length)setActive(fs[0]);
+}
+function padInput(k){
+  var f=state.activeField;if(!f)return;
+  var v=f.dataset.v||'';
+  if(k==='back')v=v.slice(0,-1);
+  else if(k==='clear')v='';
+  else if(v.length<3)v+=k;
+  setField(f,v);
+  if(state.step==='combine')syncAnswerBar();
+}
+function syncAnswerBar(){
+  var bar=el('ansBar');if(!bar||!state.combineField)return;
+  var v=parseInt(state.combineField.dataset.v||'0',10)||0;
+  var segs=bar.children;
+  for(var i=0;i<segs.length;i++)segs[i].classList.toggle('on',i<v);
+}
+
+/* ---------- praise copy ---------- */
+var PRAISE={
+  denominator:['That\u2019s it — {cd} works for every bottom.','Exactly — {cd} is the number all of them share.','Right — count by each bottom and you land on {cd}.'],
+  rename:['Nicely renamed — everything is in {cd}ths now.','Beautiful — the slices changed but the amounts stayed the same.','All set — every row now counts in {cd}ths.'],
+  combine:['Combined!','Tops handled, bottoms steady. Nicely done.','That\u2019s the combine step sorted.']
+};
+function praise(kind){var list=PRAISE[kind];var m=list[Math.floor(rng()*list.length)];return m.replace('{cd}',state.q.cd)}
+function confirmHTML(msg){return '<div class="confirm">'+SVG.check+'<p>'+msg+'</p><button type="button" class="btn" id="btnCont">Continue</button></div>'}
+
+/* ---------- step flow ---------- */
+function markStep(k){
+  var log=state.stepLog;
+  if(!log.length||log[log.length-1].k!==k)log.push({k:k,ok:true});
+}
+function mistakeAt(k){
+  var log=state.stepLog;
+  for(var i=log.length-1;i>=0;i--){if(log[i].k===k){log[i].ok=false;break}}
+  state.retrySpec=state.q.retry;
+  state.streak=0;
+}
+function flushStepStats(){
+  var st=store.levels[state.level],log=state.stepLog;
+  for(var i=0;i<log.length;i++){
+    var s=st.steps[log[i].k];
+    if(s){s.a++;if(log[i].ok)s.c++}
+  }
+  save();
+}
+function advanceTo(step){
+  var prev=state.step;
+  markStep(step);
+  var doIt=function(){
+    state.step=step;
+    state.hintTier=0;
+    renderSteps();renderExpr();renderBars();renderPrompt();
+    var bars=el('bars');
+    if(prev==='denominator'&&step==='rename'){bars.classList.remove('swapping')}
+  };
+  if(prev==='denominator'&&step==='rename'&&!reducedMotion){
+    el('bars').classList.add('swapping');
+    setTimeout(doIt,270);
+  }else doIt();
+  play('step');
+}
+
+/* ---------- hints (two tiers per step, answers never named) ---------- */
+function headHTML(title){
+  return '<div class="p-head"><p class="p-title">'+title+'</p>'+
+    '<button type="button" class="nudge" id="hintBtn">'+SVG.bulb+' Need a nudge?</button></div>'+
+    '<p class="starnote">Stars are earned by solving a question with no hints and no wrong steps.</p>'+
+    '<div class="hintbox hidden" id="hintBox" role="note" aria-live="polite"></div>';
+}
+function spf(n){ /* smallest prime factor of n (n >= 2), built from the real question numbers */
+  n=Math.abs(Math.trunc(n));
+  if(n<2)return 2;
+  for(var p=2;p*p<=n;p++)if(n%p===0)return p;
+  return n;
+}
+function multiplesHTML(dens,cd){
+  var h='';
+  for(var i=0;i<dens.length;i++){
+    var d=dens[i],items=[],k;
+    for(k=1;k<=10;k++){var m=d*k;if(m>cd*2)break;items.push(m)}
+    var need=[cd,2*cd];
+    for(var s=0;s<need.length;s++){
+      if(items.indexOf(need[s])===-1){items.push('…');items.push(need[s])}
+    }
+    var chips=items.map(function(v){
+      if(v==='…')return '<span class="mel">…</span>';
+      return '<span class="mchip'+(v%cd===0?' shared':'')+'">'+v+'</span>';
+    }).join('');
+    h+='<div class="mrow"><span class="mlab">'+d+'s:</span>'+chips+'</div>';
+  }
+  return '<div class="mlist">'+h+'</div>';
+}
+function hintD(q,tier){
+  var cd=q.cd;
+  if(tier===1){
+    return '<p>List the multiples of each bottom number: '+densText(q)+'. Which number appears in every list? The first one you find is the one to pick.</p>';
+  }
+  return '<p>Here are the multiples. The highlighted ones appear in <b>every</b> list — your answer is the smallest of them:</p>'+
+    multiplesHTML(q.terms.map(function(t){return t.d}),cd)+
+    '<p>Give it one more look, then choose from the buttons.</p>';
+}
+function hintR(q,tier){
+  var t=q.terms[0],cd=q.cd,f=cd/t.d;
+  if(tier===1){
+    return '<p>Take each fraction one at a time. What do you multiply its bottom by to reach <b>'+cd+'</b>? Now multiply its top by the same number — the slices get smaller but the amount stays the same.</p>';
+  }
+  var ex;
+  if(t.w>0){
+    var imp=t.w*t.d+t.n;
+    ex='<p>Watch one of them part-way. First make '+termText(t)+' top-heavy: '+imp+'/'+t.d+' (that\u2019s '+t.w+' × '+t.d+' + '+t.n+', since the bottom is '+t.d+').</p>'+
+       '<p>Then '+t.d+' × '+f+' = '+cd+', so multiply the top by '+f+' too.</p>';
+  }else{
+    ex='<p>Watch one of them part-way: '+t.d+' × <b>'+f+'</b> = '+cd+', so take '+termText(t)+' and multiply its top by '+f+' too.</p>';
+  }
+  return ex+'<p>You work the other '+(q.terms.length-1>1?'fractions':'fraction')+' the same way — find the multiplier for each bottom.</p>';
+}
+function hintC(q,tier){
+  var cd=q.cd;
+  if(tier===1){
+    return '<p>The bottoms are all '+cd+', and they stay that way. What happens to the tops — working left to right?</p>';
+  }
+  var verb;
+  if(q.ops.length===1){verb=q.ops[0]==='-'?'Subtract the second top from the first':'Add the two tops together'}
+  else{verb=q.ops.every(function(o){return o==='+'})?'Add all the tops together, working left to right':'Work from left to right: start with the first top, then add or subtract each next top as the signs say'}
+  return '<p>'+verb+'. Only the tops change — the bottom stays '+cd+'.</p>';
+}
+function hintS(q,tier){
+  var g=pgcd(q.raw,q.cd);
+  if(tier===1){
+    return '<p>Look at <b>'+q.raw+'/'+q.cd+'</b>. What\u2019s the biggest number that divides both the top and the bottom?</p>';
+  }
+  if(g>1){
+    var p=spf(g);
+    return '<p>Take a smaller bite: divide the top and bottom by <b>'+p+'</b> and see what you get. If you can simplify again, keep going — and if the top comes out bigger than the bottom, pull the wholes out front.</p>';
+  }
+  return '<p>The fraction is already fully divided-down, but it\u2019s top-heavy. How many whole '+q.cd+'ths fit into '+q.raw+'? Those make your whole number — the leftovers stay on top.</p>';
+}
+function tierBody(q,step,tier){
+  if(step==='denominator')return hintD(q,tier);
+  if(step==='rename')return hintR(q,tier);
+  if(step==='combine')return hintC(q,tier);
+  return hintS(q,tier);
+}
+function hintHistHTML(){
+  var q=state.q,s=state.step,out='';
+  for(var t=1;t<=state.hintTier;t++){
+    out+='<div class="htier">'+(t===1?'Nudge':'Second nudge')+'</div>'+tierBody(q,s,t);
+  }
+  if(state.hintTier>=2)out+='<p class="tiny">That\u2019s all the nudges for this step — read them once more and give it your best try.</p>';
+  return out;
+}
+function renderHintBox(){
+  var box=el('hintBox');
+  box.innerHTML=hintHistHTML()+'<div class="hintbtns">'+
+    (state.hintTier<2?'<button type="button" class="hbtn primary" id="hintMore">Still stuck? One more nudge</button>':'')+
+    '<button type="button" class="hbtn" id="hintBack">Back to it</button></div>';
+  box.classList.remove('hidden');
+  var hb=el('hintBtn');if(hb)hb.classList.add('hidden');
+  var m=el('hintMore');if(m)m.addEventListener('click',revealNextTier);
+  el('hintBack').addEventListener('click',hideHintBox);
+  /* keep the whole nudge (incl. its buttons) above the sticky number pad */
+  if(!el('padbar').classList.contains('hidden'))box.scrollIntoView({block:'nearest'});
+}
+function revealNextTier(){
+  if(state.hintTier>=2)return; /* two-tier cap per step */
+  state.hintTier++;
+  state.hintUsed=true; /* a question solved with any hint earns no star */
+  var s=store.levels[state.level].steps[state.step];
+  if(s){s.hints=(s.hints||0)+1;save()}
+  play('step');
+  renderHintBox();
+}
+function openHint(){
+  if(state.hintTier===0)revealNextTier();
+  else renderHintBox(); /* re-opening shown tiers never counts again */
+}
+function hideHintBox(){
+  el('hintBox').classList.add('hidden');
+  var hb=el('hintBtn');
+  if(hb){hb.classList.remove('hidden');hb.innerHTML=SVG.bulb+' '+(state.hintTier>=2?'See my nudges':'See my nudge')}
+}
+
+/* ---------- prompts ---------- */
+function densText(q){
+  var ds=q.terms.map(function(t){return t.d});
+  return listJoin(ds.map(String),'and');
+}
+function renderPrompt(){
+  var q=state.q,s=state.step;
+  state.combineField=null;
+  if(s==='denominator')promptCD(q);
+  else if(s==='rename')promptRename(q);
+  else if(s==='combine')promptCombine(q);
+  else if(s==='simplify')promptSimplify(q);
+  var hb=el('hintBtn');
+  if(hb)hb.addEventListener('click',openHint);
+  renderHeader();
+}
+function promptCD(q){
+  var opts=q.cdOptions.map(function(o){return '<button type="button" class="opt" data-v="'+o+'">'+o+'</button>'}).join('');
+  el('prompt').innerHTML=headHTML('Pick the common denominator')+
+    '<p class="p-sub">Which is the smallest number the bottoms ('+densText(q)+') all divide into evenly?</p>'+
+    '<div class="opts">'+opts+'</div>';
+  showPad(false);
+  var btns=el('prompt').querySelectorAll('.opt');
+  for(var i=0;i<btns.length;i++)btns[i].addEventListener('click',function(){onCDPick(parseInt(this.dataset.v,10),btns)});
+}
+function onCDPick(val,btns){
+  var q=state.q;
+  for(var i=0;i<btns.length;i++)btns[i].disabled=true;
+  if(parseInt(btns[0].dataset.v,10)===q.cd){btns[0].classList.add('correct')}
+  else if(parseInt(btns[1].dataset.v,10)===q.cd){btns[1].classList.add('correct')}
+  else{btns[2].classList.add('correct')}
+  var delay=reducedMotion?0:700;
+  if(val===q.cd){
+    play('ok');
+    setTimeout(function(){
+      el('prompt').innerHTML=confirmHTML(praise('denominator'));
+      el('btnCont').addEventListener('click',function(){advanceTo('rename')});
+      showPad(false);
+    },delay);
+  }else{
+    for(var j=0;j<btns.length;j++)if(parseInt(btns[j].dataset.v,10)===val)btns[j].classList.add('wrong');
+    play('bad');
+    setTimeout(function(){
+      mistakeAt('denominator');flushStepStats();
+      showExplain(exCDHTML(q,val));
+    },reducedMotion?0:1000);
+  }
+}
+function promptRename(q){
+  var rows=q.terms.map(function(t,i){
+    var hint=t.w>0?'<p class="rhint">First make it improper: '+termText(t)+' = '+(t.w*t.d+t.n)+'/'+t.d+' — then rename.</p>':'';
+    return '<div class="rrow"><span class="rterm">'+termText(t)+' =</span>'+fieldHTML('r'+i,'n',i)+'<span class="rden">/'+q.cd+'</span></div>'+hint;
+  }).join('');
+  el('prompt').innerHTML=headHTML('Rename the numerators')+
+    '<p class="p-sub">The bars re-sliced into <b>'+q.cd+'</b>ths. What does each row become?</p>'+
+    '<div class="rrows">'+rows+'</div>'+
+    '<p class="phint">Tap a box, then use the number pad.</p>';
+  showPad(true);
+  wireFields(el('prompt'));
+  renderCheck(onRenameSubmit);
+}
+function onRenameSubmit(){
+  var q=state.q,p=el('prompt');
+  var fs=p.querySelectorAll('.field');
+  var vals=[];
+  for(var i=0;i<fs.length;i++){
+    var v=(fs[i].dataset.v||'').trim();
+    if(v===''){padErr('Fill in every box to check.');return}
+    vals.push(parseInt(v,10));
+  }
+  var badIdx=-1;
+  for(var j=0;j<vals.length;j++)if(vals[j]!==q.renamed[j]){badIdx=j;break}
+  if(badIdx>=0){
+    play('bad');
+    mistakeAt('rename');flushStepStats();
+    showExplain(exRenameHTML(q,badIdx));
+  }else{
+    play('ok');
+    showPad(false);
+    p.innerHTML=confirmHTML(praise('rename'));
+    el('btnCont').addEventListener('click',function(){advanceTo('combine')});
+  }
+}
+function promptCombine(q){
+  var addAll=q.ops.every(function(o){return o==='+'});
+  var sub=q.ops.length===1&&q.ops[0]==='-';
+  var hint=q.kind==='same2'
+    ?(sub?'Subtract the tops — the bottom stays '+q.cd+'.':'Add the tops — the bottom stays '+q.cd+'.')
+    :(q.ops.length>1?(addAll?'Add the tops, working left to right. Bottoms stay '+q.cd+'.':'Combine the tops, working left to right. Bottoms stay '+q.cd+'.')
+      :(q.ops[0]==='-'?'Subtract the tops — bottoms stay '+q.cd+'.':'Add the tops — bottoms stay '+q.cd+'.'));
+  el('prompt').innerHTML=headHTML('Combine')+
+    '<p class="p-sub">'+hint+'</p>'+
+    '<div class="rrow">'+fieldHTML('cn','n')+'<span class="rden">/'+q.cd+'</span></div>'+
+    '<p class="phint">'+(state.level==='adeline'?'Tap the slices in your answer bar — or use the pad below.':'Use the number pad below.')+'</p>';
+  showPad(true);
+  wireFields(el('prompt'));
+  state.combineField=el('prompt').querySelector('.field');
+  syncAnswerBar();
+  renderCheck(onCombineSubmit);
+}
+function onCombineSubmit(){
+  var q=state.q,p=el('prompt');
+  var v=(p.querySelector('.field').dataset.v||'').trim();
+  if(v===''){padErr('Fill in the box to check.');return}
+  var n=parseInt(v,10);
+  if(n!==q.raw){
+    play('bad');
+    mistakeAt('combine');flushStepStats();
+    showExplain(exCombineHTML(q));
+  }else if(simplifyNeeded(q)){
+    play('ok');
+    showPad(false);
+    p.innerHTML=confirmHTML(praise('combine')+' One tidy-up left: simplify it.');
+    el('btnCont').addEventListener('click',function(){advanceTo('simplify')});
+  }else{
+    finishQuestion(true,null);
+  }
+}
+function simplifyVariant(q){
+  var s=q.simp;
+  if(s.wholeOnly)return'whole';
+  return s.w>0?'mixed':'proper';
+}
+function promptSimplify(q){
+  var s=q.simp,v=simplifyVariant(q);
+  var found='<div class="foundline">'+fracHTML(q.raw,q.cd)+'</div>';
+  var intro,fields;
+  if(v==='whole'){
+    intro='You found <b>'+fracText(q.raw,q.cd)+'</b>. This one comes out to a whole number — write it.';
+    fields='<div class="rrow">'+fieldHTML('sw','w')+'</div>';
+  }else if(v==='mixed'){
+    intro='You found <b>'+fracText(q.raw,q.cd)+'</b> — part of it is whole. Write it as a mixed number in simplest form.';
+    fields='<div class="rrow">'+fieldHTML('sw','w')+'<span class="sfrac">'+fieldHTML('sn','n')+'<span class="sr"></span>'+fieldHTML('sd','d')+'</span></div>';
+  }else{
+    intro='You found <b>'+fracText(q.raw,q.cd)+'</b>. Write the simplest form.';
+    fields='<div class="rrow"><span class="sfrac">'+fieldHTML('sn','n')+'<span class="sr"></span>'+fieldHTML('sd','d')+'</span></div>';
+  }
+  el('prompt').innerHTML=headHTML('Simplify')+found+
+    '<p class="p-sub">'+intro+'</p>'+fields+
+    '<p class="phint">Any form that equals it counts — but simplest is best.</p>';
+  showPad(true);
+  wireFields(el('prompt'));
+  renderCheck(function(){onSimplifySubmit(q,v)});
+}
+function onSimplifySubmit(q,v){
+  var p=el('prompt');
+  function grab(part){var f=p.querySelector('[data-part="'+part+'"]');return f?(f.dataset.v||'').trim():''}
+  var vals;
+  if(v==='whole')vals={w:grab('w'),n:'0',d:'1'};
+  else vals={w:v==='mixed'?grab('w'):'0',n:grab('n'),d:grab('d')};
+  var parsed=parseEntry(vals);
+  if(parsed.error==='empty'){padErr('Fill in every box to check.');return}
+  if(parsed.error==='zero'){padErr('Bottoms can\u2019t be 0 — pick another number.');return}
+  if(!parsed.ok){padErr('Hmm, that doesn\u2019t look right — try numbers.');return}
+  var target={w:q.simp.w,n:q.simp.n,d:q.simp.d};
+  if(!equalFrac(parsed.f,target)){
+    play('bad');
+    mistakeAt('simplify');flushStepStats();
+    showExplain(exSimplifyHTML(q));
+    return;
+  }
+  var ec={w:parsed.f.w,n:parsed.f.n,d:parsed.f.d},tc=canonOf(target);
+  var isCanon=ec.w===tc.w&&ec.n===tc.n&&ec.d===tc.d;
+  var note=null;
+  if(!isCanon){
+    note='That\u2019s equal — <b>'+canonText(ec)+'</b> has the same value. The tidiest way to write it is <b>'+canonText(tc)+'</b>.';
+  }
+  finishQuestion(true,note);
+}
+
+/* ---------- explanations ---------- */
+function exCDHTML(q,picked){
+  var dens=q.terms.map(function(t){return t.d});
+  var valid=dens.every(function(d){return picked%d===0});
+  var lead=valid
+    ?'<strong>Good thinking — '+picked+' really is a common denominator!</strong> But the <em>smallest</em> one is <strong>'+q.cd+'</strong>, and smaller numbers make every step easier.'
+    :'Not quite. The <em>smallest</em> number all the bottoms divide into is <strong>'+q.cd+'</strong>.';
+  var lists=dens.map(function(d){
+    var ms=[];for(var m=d;m<=q.cd;m+=d)ms.push(m);
+    var txt=ms.length<=8?ms.join(', '):(ms[0]+', '+ms[1]+', …, '+ms[ms.length-2]+', '+ms[ms.length-1]);
+    return '<div class="wrow"><span class="wl">'+d+'s:</span> '+txt+'</div>';
+  }).join('');
+  return '<p>'+lead+'</p><div class="work">'+lists+'</div><p class="ex-note">Tip: count up by each bottom number until you find a number they share — the first one you find is the smallest.</p>';
+}
+function exRenameHTML(q,ti){
+  var t=q.terms[ti],cd=q.cd,f=cd/t.d,rn=q.renamed[ti];
+  var rows;
+  if(t.w>0){
+    var imp=t.w*t.d+t.n;
+    rows='<div class="wrow">'+termText(t)+' = '+imp+'/'+t.d+' &nbsp;(that\u2019s '+t.w+' × '+t.d+' + '+t.n+')</div>'+
+         '<div class="wrow">Then multiply top and bottom by '+f+': '+imp+' × '+f+' = '+rn+' → <strong>'+rn+'/'+cd+'</strong></div>';
+  }else{
+    rows='<div class="wrow">To rename '+t.n+'/'+t.d+' as '+cd+'ths, multiply top and bottom by '+f+' (since '+t.d+' × '+f+' = '+cd+'):</div>'+
+         '<div class="wrow">'+t.n+' × '+f+' = '+rn+' → <strong>'+rn+'/'+cd+'</strong></div>';
+  }
+  return '<p>Not quite — here\u2019s the move for <strong>'+termText(t)+'</strong>:</p><div class="work">'+rows+'</div><p class="ex-note">Whatever you multiply the bottom by, do the same to the top. The slices get smaller, but the amount stays the same.</p>';
+}
+function exCombineHTML(q){
+  var parts=q.renamed.map(function(r){return r+'/'+q.cd});
+  var body=parts[0];
+  for(var i=0;i<q.ops.length;i++)body+=' '+exprOp(q.ops[i])+' '+parts[i+1];
+  var verb=q.ops.length>1?(q.ops.every(function(o){return o==='+'})?'add':'add and subtract'):(q.ops[0]==='-'?'subtract — and keep the order':'add');
+  return '<p>Have a look at the working:</p><div class="work"><div class="wrow">'+body+'</div><div class="wrow">= <strong>'+q.raw+'/'+q.cd+'</strong> — the bottom stays '+q.cd+', you '+verb+' the tops'+(q.ops.length>1?', working left to right':'')+'.</div></div><p class="ex-note">When the bottoms already match, only the tops do the work.</p>';
+}
+function exSimplifyHTML(q){
+  var g=pgcd(q.raw,q.cd),rn=q.raw/g,rd=q.cd/g,s=q.simp;
+  var html='<p>Let\u2019s tidy up <strong>'+q.raw+'/'+q.cd+'</strong>:</p><div class="work">';
+  if(s.wholeOnly){
+    html+='<div class="wrow">'+q.raw+'/'+q.cd+' = <strong>'+s.w+'</strong> — the top divides evenly by the bottom.</div>';
+  }else{
+    if(g>1)html+='<div class="wrow">Divide top and bottom by '+g+': → '+rn+'/'+rd+'</div>';
+    if(s.w>0)html+='<div class="wrow">'+rn+'/'+rd+' = <strong>'+s.w+' '+s.n+'/'+s.d+'</strong> — '+rn+' ÷ '+rd+' makes '+s.w+' whole with '+s.n+' left over.</div>';
+    else html+='<div class="wrow">= <strong>'+rn+'/'+rd+'</strong></div>';
+  }
+  html+='</div><p class="ex-note">Simplified means: nothing left that divides both the top and the bottom — and any whole parts pulled out front.</p>';
+  return html;
+}
+function showExplain(html){
+  renderHeader();
+  el('exBody').innerHTML=html;
+  show('screenExplain');
+}
+
+/* ---------- question finish ---------- */
+function solvedLine(q){
+  var s=q.simp;
+  if(s.isZero)return'The answer is <b>0</b> — some questions just land there.';
+  if(!simplifyNeeded(q))return'That\u2019s <b>'+fracText(q.raw,q.cd)+'</b> — already in simplest form. Tidy!';
+  return'Simplest form: <b>'+canonText(s)+'</b>';
+}
+function finishQuestion(perfect,noteHTML){
+  flushStepStats();
+  var st=store.levels[state.level];
+  if(perfect){st.perfect++;state.roundPerfect++;state.streak++;if(state.streak>st.bestStreak)st.bestStreak=state.streak;if(!state.hintUsed){st.stars++;state.roundStars++}}
+  save();renderHeader();
+  showPad(false);
+  var last=state.idx>=7;
+  var notes=noteHTML?'<div class="note">'+noteHTML+'</div>':'';
+  if(state.hintUsed)notes+='<div class="note">No star this time — you used a nudge, and that\u2019s what they\u2019re for. See if you can solve the next one on your own.</div>';
+  el('prompt').innerHTML='<div class="solved">'+SVG.star+'<h3>Solved!</h3>'+
+    '<p class="sline">'+solvedLine(state.q)+'</p>'+
+    notes+
+    '<p class="stline">Streak ×'+state.streak+' · '+st.stars+' stars for '+NAMES[state.level]+'</p>'+
+    '<button type="button" class="btn" id="btnNext">'+(last?'See round summary':'Next question')+'</button></div>';
+  el('btnNext').addEventListener('click',function(){
+    play('step');
+    if(last)showSummary();else{state.idx++;nextInPlan()}
+  });
+  play(perfect?'star':'ok');
+}
+
+/* ---------- round flow ---------- */
+function startQuestion(spec){
+  var q=makeQuestion(rng,state.level,spec,state.asked);
+  if(!q){showSummary();return}
+  state.asked.add(canonicalKey(q));
+  state.q=q;state.stepLog=[];state.retrySpec=null;state.activeField=null;state.hintTier=0;state.hintUsed=false;
+  state.step=(q.kind==='same2')?'combine':'denominator';
+  store.levels[state.level].attempted++;save();
+  markStep(state.step);
+  renderHeader();renderSteps();renderExpr();renderBars();renderPrompt();
+  show('screenRound');
+  play('step');
+  window.scrollTo(0,0);
+}
+function nextInPlan(){
+  if(state.idx>=8){showSummary();return}
+  startQuestion(state.plan[state.idx]);
+}
+function startRound(){
+  state.plan=roundPlan(rng,state.level);
+  state.idx=0;state.roundStars=0;state.roundPerfect=0;
+  show('screenRound');
+  nextInPlan();
+}
+function beginLevel(){
+  state.asked.clear();state.streak=0;
+  startRound();
+}
+function toStart(){
+  state.asked.clear();state.streak=0;
+  updateLevelCards();
+  show('screenStart');
+}
+function showSummary(){
+  var st=store.levels[state.level];
+  st.rounds++;save();
+  var acc=st.attempted?Math.round(100*st.perfect/st.attempted):0;
+  el('sumLine').textContent=NAMES[state.level]+' — steady work. Stars are earned by solving a question with no hints and no wrong steps.';
+  el('sumStats').innerHTML=
+    stat(st.roundStars+' / 8','stars this round')+
+    stat(state.roundPerfect+' / 8','questions solved cleanly')+
+    stat(st.bestStreak,'best streak')+
+    stat(acc+'%','accuracy overall');
+  show('screenSummary');
+  play('star');
+}
+function stat(v,l){return '<div class="stat"><div class="sv">'+v+'</div><div class="sl">'+l+'</div></div>'}
+
+/* ---------- for parents ---------- */
+function pct(c,a){return a?Math.round(100*c/a)+'%':'—'}
+function renderParents(){
+  var order=['adeline','remi','seline'];
+  el('parentList').innerHTML=order.map(function(k){
+    var st=store.levels[k];
+    var topics=Object.keys(TOPIC_LABELS).map(function(t){
+      var s=st.steps[t],w=s.a?Math.round(100*s.c/s.a):0,h=s.hints||0;
+      return '<div class="trow"><span>'+TOPIC_LABELS[t]+'</span><span class="meter"><i style="width:'+w+'%"></i></span><span class="tpct">'+pct(s.c,s.a)+'<span class="thsub">'+h+' hint'+(h===1?'':'s')+'</span></span></div>';
+    }).join('');
+    return '<div class="pcard"><h3>'+NAMES[k]+'</h3>'+
+      '<div class="pgrid">'+
+      '<div class="pkv"><div class="pvv">'+st.attempted+'</div><div class="pll">questions</div></div>'+
+      '<div class="pkv"><div class="pvv">'+pct(st.perfect,st.attempted)+'</div><div class="pll">accuracy</div></div>'+
+      '<div class="pkv"><div class="pvv">'+st.stars+'</div><div class="pll">stars</div></div>'+
+      '<div class="pkv"><div class="pvv">'+st.bestStreak+'</div><div class="pll">best streak</div></div>'+
+      '<div class="pkv"><div class="pvv">'+st.rounds+'</div><div class="pll">rounds</div></div>'+
+      '</div>'+topics+'</div>';
+  }).join('');
+  if(!storageOK)el('pareNote').textContent='Progress can\u2019t be saved in this browser session — stats below are for this visit only.';
+}
+
+/* ---------- wiring ---------- */
+function init(){
+  var cards=document.querySelectorAll('.level');
+  for(var i=0;i<cards.length;i++){
+    cards[i].addEventListener('click',function(){
+      state.level=this.dataset.level;
+      updateLevelCards();
+    });
+  }
+  el('btnStart').addEventListener('click',function(){play('step');beginLevel()});
+  el('btnSound').addEventListener('click',toggleSound);
+  el('btnSound2').addEventListener('click',toggleSound);
+  el('btnMenu').addEventListener('click',toStart);
+  el('btnMenu2').addEventListener('click',toStart);
+  el('btnParents').addEventListener('click',function(){renderParents();show('screenParents')});
+  el('btnPBack').addEventListener('click',function(){updateLevelCards();show('screenStart')});
+  el('btnRetry').addEventListener('click',function(){play('step');startQuestion(state.retrySpec||state.plan[state.idx])});
+  el('btnAgain').addEventListener('click',function(){play('step');startRound()});
+  el('btnChange').addEventListener('click',toStart);
+  var armed=false,armT=null;
+  el('btnReset').addEventListener('click',function(){
+    if(!armed){
+      armed=true;el('resetNote').hidden=false;
+      el('btnReset').textContent='Tap again to confirm reset';
+      armT=setTimeout(function(){armed=false;el('resetNote').hidden=true;el('btnReset').textContent='Reset all saved progress'},6000);
+    }else{
+      clearTimeout(armT);armed=false;
+      store=blankStore();save();renderParents();updateLevelCards();
+      el('resetNote').hidden=true;el('btnReset').textContent='Reset all saved progress';
+    }
+  });
+  el('pad').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    padInput(b.dataset.k);
+  });
+  el('bars').addEventListener('click',function(e){
+    var seg=e.target.closest('.seg');if(!seg)return;
+    var bar=seg.closest('.bar');
+    if(!bar||!bar.dataset.interactive||state.step!=='combine')return;
+    if(!state.combineField)return;
+    setField(state.combineField,String(parseInt(seg.dataset.i,10)+1));
+    syncAnswerBar();
+  });
+  document.addEventListener('keydown',function(e){
+    if(state.screen!=='screenRound')return;
+    var f=state.activeField;if(!f)return;
+    if(/^[0-9]$/.test(e.key))padInput(e.key);
+    else if(e.key==='Backspace')padInput('back');
+    else if(e.key==='Enter'){
+      var ae=document.activeElement;
+      if(ae&&ae.id==='btnSub')return;
+      var b=el('btnSub');if(b){e.preventDefault();b.click()}
+    }
+  });
+  renderSound();
+  updateLevelCards();
+}
+init();
+</script>
+</body>
+</html>
