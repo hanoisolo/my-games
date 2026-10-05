@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Geo Quest — Adeline's Geography Quiz</title>
+<style>
+:root{
+  --bg:#f2f5f0; --ink:#2c3a32; --muted:#6b7a6f;
+  --card:#ffffff; --line:#dfe5dc;
+  --accent:#2a7f6f; --accent-soft:#dff0ea;
+  --gold:#c9a227; --gold-soft:#faf3dd;
+  --blue:#5b7fa6; --blue-soft:#e3eaf5;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+#app{max-width:540px;margin:0 auto;min-height:100vh;padding:20px 16px 60px}
+.hidden{display:none !important}
+h1{font-size:2rem;margin:.2em 0 .1em;text-align:center}
+.tag{text-align:center;color:var(--muted);margin:0 0 1.2em}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.child-card{background:var(--card);border:2px solid var(--accent);border-radius:18px;padding:18px;margin:0 0 1em;text-align:center}
+.child-card .who{font-size:1.4rem;font-weight:700}
+.child-card .lvl{color:var(--muted);font-size:.95rem;margin-top:4px}
+details.how{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 1em}
+details.how summary{cursor:pointer;font-weight:600}
+.linklike{background:none;border:none;color:var(--blue);font-size:1rem;cursor:pointer;display:block;margin:0 auto;text-decoration:underline}
+.device-note{text-align:center;color:var(--muted);font-size:.85rem;margin-top:1.2em}
+button.primary{display:block;width:100%;margin-top:6px;padding:15px;font-size:1.15rem;border:none;border-radius:14px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+button.primary:active{transform:scale(.99)}
+button.ghost{display:block;width:100%;margin-top:8px;padding:13px;font-size:1.05rem;border-radius:14px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+/* topbar */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.topbar #btn-back{font-size:1.5rem;border:1px solid var(--line);background:var(--card);border-radius:12px;width:44px;height:44px;cursor:pointer;color:var(--ink)}
+#q-counter{font-weight:600;color:var(--muted);flex:1}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.pill b{margin-left:2px}
+#dots{display:flex;gap:6px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap}
+#dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+#dots i.done{background:var(--accent)}
+#dots i.now{background:var(--blue)}
+/* prompt panel */
+.prompt-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px}
+.prompt-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.topic-pill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:700}
+.hint-btn{border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:8px 14px;font-size:.95rem;cursor:pointer;white-space:nowrap}
+.hint-btn:disabled{opacity:.4;cursor:default}
+.hint-btn.used{border-style:solid}
+#question-line{font-size:1.35rem;margin:.8em 0 1em;line-height:1.4}
+#choices{display:flex;flex-direction:column;gap:10px}
+button.choice{padding:16px;font-size:1.1rem;border-radius:14px;border:2px solid var(--line);background:#fbfcff;cursor:pointer;color:var(--ink);text-align:left}
+button.choice:active{transform:scale(.99)}
+button.choice:disabled{cursor:default}
+button.choice.right{border-color:var(--accent);background:var(--accent-soft)}
+button.choice.wrongpick{border-color:#c98a8a;background:#faf0f0}
+button.choice.elim{opacity:.35;text-decoration:line-through}
+#feedback{min-height:2em;text-align:center;font-weight:600;margin-top:12px;color:var(--accent)}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(44,58,50,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay .card{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px 20px;max-height:86vh;overflow:auto}
+.overlay h3{margin:.1em 0 .5em;font-size:1.25rem}
+.overlay .card p{margin:.5em 0}
+#ov-actions{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.98rem}
+.kv:last-child{border-bottom:none}
+.star-note{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:.95rem;margin-top:10px}
+.gentle{background:var(--blue-soft);border-radius:12px;padding:10px 12px;font-size:.98rem}
+.trow{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line);font-size:.95rem}
+.trow:last-child{border-bottom:none}
+.trow .tn{flex:1}
+.trow .tp{color:var(--muted);white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen">
+    <h1>Geo Quest</h1>
+    <p class="tag">A geography quiz adventure</p>
+    <div class="child-card">
+      <div class="who">Adeline</div>
+      <div class="lvl">Ages 9–10 · continents, oceans, Canada & map skills</div>
+    </div>
+    <details class="how">
+      <summary>How it works</summary>
+      <p>Answer 10 geography questions. Tap the answer you think is right — big buttons, no rush, no timers.</p>
+      <p>Stuck? Tap <b>Need a nudge?</b> for a clue. Still stuck? You can knock out two wrong answers — but using a hint means no star for that question. Stars have to be earned!</p>
+      <p>A wrong pick just brings a kind explanation and a similar question to try. Mistakes are part of learning.</p>
+    </details>
+    <button id="btn-start" class="primary">Start the quiz</button>
+    <button id="btn-parents-start" class="linklike" style="margin-top:10px">For parents</button>
+    <p class="device-note">Progress is saved only on this device.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen hidden">
+    <div class="topbar">
+      <button id="btn-back" aria-label="Back">‹</button>
+      <span id="q-counter"></span>
+      <span class="pill">★ <b id="star-count">0</b></span>
+      <span class="pill">streak <b id="streak-count">0</b></span>
+    </div>
+    <div id="dots"></div>
+    <div class="prompt-panel">
+      <div class="prompt-head">
+        <span class="topic-pill" id="topic-pill"></span>
+        <button id="btn-hint" class="hint-btn">Need a nudge?</button>
+      </div>
+      <div id="question-line"></div>
+      <div id="choices"></div>
+      <div id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay hidden">
+    <div class="card">
+      <h3 id="ov-title"></h3>
+      <div id="ov-body"></div>
+      <div id="ov-actions"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ================= config & bank (injected) ================= */
+const CFG = {"child": "Adeline", "age": "10", "title": "Geo Quest \u2014 Adeline's Geography Quiz", "storeKey": "geoquest.adeline.v1"};
+const BANK = [
+{t:'Continents', q:'Which is the largest continent?', c:['Africa','Asia','Europe','South America'], a:1, h:'It is home to China, India, and more than half of all the people in the world.', w:'Asia is the largest continent — it covers about 30% of Earth\'s land.'},
+{t:'Continents', q:'Which continent is the Sahara Desert on?', c:['Africa','Asia','Australia','South America'], a:0, h:'It is the continent just south of Europe, across the Mediterranean Sea.', w:'The Sahara, the world\'s largest hot desert, covers much of northern Africa.'},
+{t:'Continents', q:'Which is the smallest continent?', c:['Europe','Australia','Antarctica','South America'], a:1, h:'It is also the name of a country.', w:'Australia is the smallest continent — and also a country.'},
+{t:'Continents', q:'Which continent is Brazil in?', c:['North America','Africa','South America','Europe'], a:2, h:'It is the continent just below North America.', w:'Brazil is the largest country in South America.'},
+{t:'Continents', q:'Wild penguins come from which continent?', c:['Antarctica','Africa','Asia','Australia'], a:0, h:'It is the frozen continent around the South Pole.', w:'Penguins live in the wild around Antarctica and the Southern Ocean.'},
+{t:'Continents', q:'How many continents are there?', c:['5','6','7','8'], a:2, h:'More than five, fewer than eight.', w:'There are seven: Africa, Antarctica, Asia, Europe, North America, South America, and Australia.'},
+{t:'Continents', q:'Which continent is Egypt in?', c:['Asia','Africa','Europe','South America'], a:1, h:'The pyramids of Giza are on this continent.', w:'Egypt is in the northeast corner of Africa.'},
+{t:'Continents', q:'Which continent is France in?', c:['Europe','Asia','Africa','North America'], a:0, h:'The Eiffel Tower stands on this continent.', w:'France is in Western Europe.'},
+{t:'Continents', q:'Russia is part of which two continents?', c:['Europe and Asia','Africa and Europe','Asia and Africa','Europe and North America'], a:0, h:'Russia stretches from Eastern Europe all the way across northern Asia.', w:'Russia spans Eastern Europe and northern Asia — the largest country on Earth.'},
+{t:'Continents', q:'Which continent is India in?', c:['Africa','Asia','Europe','Australia'], a:1, h:'It is the same continent as China and Japan.', w:'India is in South Asia.'},
+{t:'Oceans', q:'Which is the largest ocean?', c:['Atlantic','Indian','Pacific','Arctic'], a:2, h:'It touches Asia, Australia, and the Americas — it is huge.', w:'The Pacific is the largest and deepest ocean on Earth.'},
+{t:'Oceans', q:'Which ocean is on Canada\'s east coast?', c:['Pacific','Atlantic','Indian','Arctic'], a:1, h:'Ships sailing from Europe cross it to reach Canada.', w:'The Atlantic Ocean lies east of Canada.'},
+{t:'Oceans', q:'Which ocean is on Canada\'s west coast?', c:['Atlantic','Pacific','Indian','Southern'], a:1, h:'It is the biggest ocean in the world.', w:'The Pacific Ocean lies west of Canada.'},
+{t:'Oceans', q:'How many oceans are there?', c:['3','4','5','6'], a:2, h:'Pacific, Atlantic, Indian, Southern — and one more icy one.', w:'Five: Pacific, Atlantic, Indian, Southern, and Arctic.'},
+{t:'Oceans', q:'Which ocean surrounds the North Pole?', c:['Atlantic','Arctic','Pacific','Indian'], a:1, h:'It is the icy ocean at the very top of the world.', w:'The Arctic Ocean surrounds the North Pole.'},
+{t:'Oceans', q:'Which ocean lies between Africa and Australia?', c:['Pacific','Atlantic','Indian','Arctic'], a:2, h:'It is named after a country.', w:'The Indian Ocean lies between Africa, Asia, and Australia.'},
+{t:'Oceans', q:'Which is the smallest ocean?', c:['Indian','Arctic','Southern','Atlantic'], a:1, h:'It is the icy one around the North Pole.', w:'The Arctic is the smallest and shallowest ocean.'},
+{t:'Canada', q:'What is the capital of Canada?', c:['Toronto','Ottawa','Montreal','Vancouver'], a:1, h:'It starts with O and is in Ontario.', w:'Ottawa, Ontario, is the capital of Canada.'},
+{t:'Canada', q:'What is the capital of Ontario?', c:['Ottawa','Toronto','Hamilton','Kingston'], a:1, h:'It is also the biggest city in Canada.', w:'Toronto is the capital of Ontario.'},
+{t:'Canada', q:'Which is Canada\'s largest province by area?', c:['Ontario','Quebec','Alberta','British Columbia'], a:1, h:'It is the French-speaking province.', w:'Quebec is Canada\'s largest province by area.'},
+{t:'Canada', q:'Which province is on Canada\'s west coast?', c:['Alberta','Manitoba','British Columbia','Ontario'], a:2, h:'Its biggest city is Vancouver.', w:'British Columbia is Canada\'s westernmost province.'},
+{t:'Canada', q:'How many provinces does Canada have?', c:['8','10','12','13'], a:1, h:'Ten provinces — plus three territories besides.', w:'Canada has 10 provinces and 3 territories.'},
+{t:'Canada', q:'Which is Canada\'s largest territory?', c:['Yukon','Nunavut','Northwest Territories','Alberta'], a:1, h:'Its name means "our land" in Inuktitut.', w:'Nunavut is Canada\'s largest territory.'},
+{t:'Canada', q:'What is the capital of Quebec?', c:['Montreal','Quebec City','Ottawa','Laval'], a:1, h:'It shares its name with the province.', w:'Quebec City is the capital of the province of Quebec.'},
+{t:'Canada', q:'Which province grows the most wheat?', c:['Alberta','Saskatchewan','Manitoba','Ontario'], a:1, h:'It is a prairie province between Alberta and Manitoba.', w:'Saskatchewan, in the prairies, grows the most wheat in Canada.'},
+{t:'Canada', q:'The CN Tower is in which city?', c:['Montreal','Vancouver','Toronto','Ottawa'], a:2, h:'It is Ontario\'s capital.', w:'The CN Tower stands in Toronto.'},
+{t:'Maps & Directions', q:'Which direction does the sun rise?', c:['North','South','East','West'], a:2, h:'It is the opposite of west.', w:'The sun rises in the east and sets in the west.'},
+{t:'Maps & Directions', q:'If you face the rising sun, what is directly behind you?', c:['North','South','East','West'], a:3, h:'The sun sets in the opposite direction from where it rises.', w:'Facing east toward the sunrise, west is behind you.'},
+{t:'Maps & Directions', q:'What are the four cardinal directions?', c:['Up, Down, Left, Right','North, South, East, West','Red, Blue, Green, Yellow','Spring, Summer, Fall, Winter'], a:1, h:'Think of a compass rose.', w:'The cardinal directions are North, South, East, and West.'},
+{t:'Maps & Directions', q:'Which direction is halfway between north and east?', c:['Southeast','Northwest','Northeast','Southwest'], a:2, h:'Its name is a mix of the two directions.', w:'Northeast is halfway between north and east.'},
+{t:'Maps & Directions', q:'The equator divides Earth into which two halves?', c:['Eastern and Western Hemispheres','Northern and Southern Hemispheres','Top and Bottom Halves','Left and Right Halves'], a:1, h:'The halves above and below the equator.', w:'The equator splits Earth into the Northern and Southern Hemispheres.'},
+{t:'Maps & Directions', q:'Which pole is shown at the bottom of most maps?', c:['North Pole','South Pole','East Pole','West Pole'], a:1, h:'Penguins live near it.', w:'The South Pole, in Antarctica, is at the bottom of most maps.'},
+{t:'Maps & Directions', q:'What is the imaginary line around Earth\'s middle called?', c:['Prime Meridian','Equator','Tropic of Cancer','Arctic Circle'], a:1, h:'It divides the Northern and Southern Hemispheres.', w:'The equator is the imaginary line circling Earth\'s middle.'},
+{t:'Countries', q:'Which is the largest country in the world?', c:['China','Canada','Russia','United States'], a:2, h:'It spans two continents.', w:'Russia is the largest country in the world by area.'},
+{t:'Countries', q:'Which country is famous for the Eiffel Tower?', c:['Italy','Spain','France','England'], a:2, h:'Its capital is Paris.', w:'The Eiffel Tower is in Paris, France.'},
+{t:'Countries', q:'Kangaroos come from which country?', c:['New Zealand','Australia','South Africa','Brazil'], a:1, h:'It is also a continent.', w:'Kangaroos are native to Australia.'},
+{t:'Countries', q:'Which country built the Great Wall?', c:['Japan','China','India','Egypt'], a:1, h:'It is the most populous country in East Asia.', w:'The Great Wall stretches across northern China.'},
+{t:'Countries', q:'The pyramids of Giza are in which country?', c:['Mexico','Egypt','Peru','Greece'], a:1, h:'It is in northeast Africa.', w:'The Giza pyramids are in Egypt.'},
+{t:'Countries', q:'Most of the Amazon rainforest is in which country?', c:['Peru','Colombia','Brazil','Venezuela'], a:2, h:'It is the biggest country in South America.', w:'About 60% of the Amazon rainforest is in Brazil.'},
+{t:'Countries', q:'Which country is also a continent?', c:['Greenland','Australia','Madagascar','Iceland'], a:1, h:'Kangaroos live there.', w:'Australia is both a country and a continent.'},
+{t:'Countries', q:'Which country\'s flag has a maple leaf?', c:['Canada','Japan','Switzerland','Denmark'], a:0, h:'It is our home country!', w:'Canada\'s flag features a red maple leaf.'},
+{t:'Countries', q:'Mount Everest sits on the border of Nepal and which country?', c:['India','China','Pakistan','Bhutan'], a:1, h:'It is the country with the Great Wall.', w:'Everest stands on the Nepal–China (Tibet) border.'},
+{t:'Countries', q:'The Grand Canyon is in which US state?', c:['Nevada','Utah','Arizona','Colorado'], a:2, h:'Its name starts with A and it is in the southwest.', w:'The Grand Canyon is in Arizona.'}
+];
+
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = rnd(i + 1); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+
+/* ================= store (this device only) ================= */
+const STORE_KEY = CFG.storeKey;
+function blankStore(){ return { stars:0, bestStreak:0, streak:0, rounds:0, topics:{} }; }
+function loadStore(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && typeof s === 'object'){ const b = blankStore(); return Object.assign(b, s); }
+  }catch(e){}
+  return blankStore();
+}
+let S = loadStore();
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+function tp(topic){
+  if (!S.topics[topic]) S.topics[topic] = { a:0, c:0, h:0 };
+  return S.topics[topic];
+}
+function recordAttempt(topic, ok){
+  const t = tp(topic); t.a++; if (ok) t.c++; save();
+}
+function recordHint(topic){ tp(topic).h++; save(); }
+
+/* ================= game flow ================= */
+const ROUND_N = 10;
+let qi = 0, order = [], q = null, qOrder = [], qCorrect = 0;
+let hintTier = 0, hintUsedQ = false, wrongQ = false, roundStars = 0;
+let locked = false;
+
+function showScreen(name){
+  $('screen-start').classList.toggle('hidden', name !== 'start');
+  $('screen-game').classList.toggle('hidden', name !== 'game');
+}
+function updatePills(){
+  $('star-count').textContent = S.stars;
+  $('streak-count').textContent = S.streak;
+}
+function renderDots(){
+  const d = $('dots'); d.innerHTML = '';
+  for (let i = 0; i < ROUND_N; i++){
+    const el = document.createElement('i');
+    if (i < qi) el.className = 'done';
+    else if (i === qi) el.className = 'now';
+    d.appendChild(el);
+  }
+}
+function startRound(){
+  qi = 0; roundStars = 0;
+  order = shuffle(BANK.map((_, i) => i));
+  showScreen('game'); updatePills();
+  newQuestion();
+}
+function pickQuestion(sameTopic){
+  // find next unused question, preferring sameTopic for retries
+  for (let k = 0; k < order.length; k++){
+    const idx = order[(qi + k) % order.length];
+    if (sameTopic && BANK[idx].t !== sameTopic) continue;
+    // ensure not already seen this round
+    if (order.slice(0, qi).includes(idx)) continue;
+    // move chosen to position qi
+    const pos = order.indexOf(idx);
+    const tmp = order[qi]; order[qi] = order[pos]; order[pos] = tmp;
+    return BANK[idx];
+  }
+  // fallback: any unused
+  for (let k = 0; k < order.length; k++){
+    const idx = order[k];
+    if (!order.slice(0, qi).includes(idx)) return BANK[idx];
+  }
+  return BANK[order[qi % order.length]];
+}
+function newQuestion(sameTopic){
+  q = pickQuestion(sameTopic);
+  hintTier = 0; hintUsedQ = false; wrongQ = false; locked = false;
+  renderDots(); renderQuestion();
+}
+function renderQuestion(){
+  $('topic-pill').textContent = q.t;
+  $('question-line').textContent = q.q;
+  $('feedback').textContent = '';
+  const hb = $('btn-hint');
+  hb.disabled = false; hb.textContent = 'Need a nudge?'; hb.classList.remove('used');
+  const box = $('choices'); box.innerHTML = '';
+  qOrder = shuffle([0,1,2,3]);
+  qCorrect = qOrder.indexOf(q.a);
+  qOrder.forEach((ci, pos) => {
+    const b = document.createElement('button');
+    b.className = 'choice'; b.textContent = q.c[ci];
+    b.dataset.pos = pos;
+    b.onclick = () => onPick(pos, b);
+    box.appendChild(b);
+  });
+  $('q-counter').textContent = 'Question ' + (qi + 1) + ' of ' + ROUND_N;
+  renderDots();
+}
+function setChoicesEnabled(on){
+  Array.prototype.forEach.call($('choices').children, b => { b.disabled = !on; });
+}
+function onPick(pos, btn){
+  if (locked) return;
+  locked = true;
+  const ok = pos === qCorrect;
+  recordAttempt(q.t, ok);
+  const buttons = $('choices').children;
+  if (ok){
+    btn.classList.add('right');
+    $('feedback').textContent = 'Nice — that\'s right!';
+    setChoicesEnabled(false);
+    setTimeout(questionDone, 1100);
+  } else {
+    wrongQ = true;
+    btn.classList.add('wrongpick');
+    buttons[qCorrect].classList.add('right');
+    $('feedback').textContent = 'Not quite — let\'s look at why.';
+    setChoicesEnabled(false);
+    setTimeout(() => showExplain(), 1100);
+  }
+}
+function questionDone(){
+  if (!hintUsedQ && !wrongQ){ S.stars++; roundStars++; }
+  S.streak++; if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+  save(); updatePills(); qi++;
+  if (qi >= ROUND_N) roundDone();
+  else newQuestion();
+}
+/* retry after a wrong answer: similar question, same slot */
+function retrySimilar(){
+  hideOverlay();
+  newQuestion(q.t);
+  // keep wrongQ=true so this slot can't earn a star
+  wrongQ = true;
+}
+function roundDone(){
+  S.rounds++; save();
+  showOverlay('Round complete!',
+    '<p style="font-size:1.2rem;text-align:center">You earned <b>★ ' + roundStars + '</b> this round.</p>' +
+    (roundStars < ROUND_N
+      ? '<p class="gentle">Hints are there when you need them — but stars are earned by answering cleanly. Try another round!</p>'
+      : '<p class="gentle">A perfect round — every question answered with no hints and no wrong picks!</p>'),
+    [
+      { label:'Play again', primary:true, onClick:startRound },
+      { label:'Back to start', onClick:() => showScreen('start') }
+    ]);
+}
+
+/* ---------- overlays ---------- */
+function showOverlay(title, bodyHTML, buttons){
+  $('ov-title').textContent = title;
+  $('ov-body').innerHTML = bodyHTML;
+  const az = $('ov-actions'); az.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.primary ? 'primary' : 'ghost';
+    btn.textContent = b.label;
+    btn.onclick = () => { hideOverlay(); if (b.onClick) b.onClick(); };
+    az.appendChild(btn);
+  });
+  $('overlay').classList.remove('hidden');
+}
+function hideOverlay(){ $('overlay').classList.add('hidden'); }
+function showExplain(){
+  showOverlay('Pause & learn',
+    '<div class="gentle">' + q.w + '</div><p>No stress — let\'s try a similar one.</p>',
+    [{ label:'Try a similar one', primary:true, onClick:retrySimilar }]);
+}
+
+/* ---------- hints ---------- */
+function onHint(){
+  hintTier++;
+  hintUsedQ = true; recordHint(q.t);
+  const hb = $('btn-hint'); hb.classList.add('used');
+  if (hintTier === 1){
+    showOverlay('A nudge for this question', '<p>' + q.h + '</p>' +
+      '<div class="star-note">Using a hint means no star for this question — but answering it still counts. Stars have to be earned!</div>',
+      [
+        { label:'Got it', primary:true },
+        { label:'Still stuck?', onClick:onHint }
+      ]);
+  } else {
+    // tier 2: knock out two wrong answers
+    const buttons = Array.prototype.slice.call($('choices').children);
+    const wrongs = shuffle(buttons.filter((b, i) => i !== qCorrect)).slice(0, 2);
+    wrongs.forEach(b => { b.classList.add('elim'); b.disabled = true; });
+    hb.disabled = true; hb.textContent = 'No more hints — give it a try!';
+    hideOverlay();
+    $('feedback').textContent = 'Two wrong answers knocked out — you\'ve got this!';
+  }
+}
+
+/* ---------- parents ---------- */
+function showParents(){
+  let rows = '';
+  Object.keys(S.topics).sort().forEach(t => {
+    const s = S.topics[t];
+    const pct = s.a ? Math.round(100 * s.c / s.a) + '%' : '—';
+    rows += '<div class="trow"><span class="tn">' + t + '</span><span class="tp">' + pct + ' · ' + s.h + ' hint' + (s.h === 1 ? '' : 's') + '</span></div>';
+  });
+  if (!rows) rows = '<p class="gentle">No questions answered yet — play a round first!</p>';
+  showOverlay('For parents — ' + CFG.child,
+    '<div class="kv"><span>Stars earned</span><span>★ ' + S.stars + '</span></div>' +
+    '<div class="kv"><span>Best streak</span><span>' + S.streak + '</span></div>' +
+    '<div class="kv"><span>Rounds played</span><span>' + S.rounds + '</span></div>' +
+    '<h4 style="margin:.8em 0 .2em">By topic</h4>' + rows +
+    '<p class="device-note">Progress is saved only on this device.</p>',
+    [
+      { label:'Reset progress', onClick:confirmReset },
+      { label:'Close', primary:true }
+    ]);
+}
+function confirmReset(){
+  showOverlay('Reset progress?',
+    '<p>This erases stars, streaks, and all stats on this device. Are you sure?</p>',
+    [
+      { label:'Yes, erase everything', onClick:() => { S = blankStore(); save(); updatePills(); } },
+      { label:'Keep my progress', primary:true }
+    ]);
+}
+
+/* ---------- init ---------- */
+function init(){
+  document.title = CFG.title;
+  $('btn-start').addEventListener('click', startRound);
+  $('btn-back').addEventListener('click', () => showScreen('start'));
+  $('btn-hint').addEventListener('click', onHint);
+  $('btn-parents-start').addEventListener('click', showParents);
+  updatePills();
+  showScreen('start');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
