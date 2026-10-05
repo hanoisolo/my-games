@@ -105,9 +105,9 @@ button.ghost{display:block;width:100%;margin-top:8px;padding:13px;font-size:1.05
     <h1>Flip &amp; Solve</h1>
     <p class="tag">Fractions: multiply &amp; divide</p>
     <div class="levels">
-      <button class="level" data-level="adeline" disabled><span>Adeline</span><span><span class="badge">Coming soon</span></span></button>
+      <button class="level" data-level="adeline"><span>Adeline</span><em>Gentle · × only</em></button>
       <button class="level sel" data-level="remy"><span>Remy</span><em>Grade 7 · × and ÷</em></button>
-      <button class="level" data-level="seline" disabled><span>Seline</span><span><span class="badge">Coming soon</span></span></button>
+      <button class="level" data-level="seline"><span>Seline</span><em>Challenge · × and ÷</em></button>
     </div>
     <details class="how">
       <summary>How it works</summary>
@@ -206,16 +206,28 @@ function recordStep(key, ok){
 function recordHint(key){ st(key).h++; save(); }
 
 /* ================= question generator ================= */
-const DENOMS = [2,3,4,5,6,7,8,9,10,12];
-function genQuestion(op){
+const LEVELS = {
+  adeline: { denoms:[2,3,4,5], ops:['×'], improper:false,
+             blurb:'gentle × only' },
+  remy:    { denoms:[2,3,4,5,6,7,8,9,10,12], ops:['×','÷'], improper:false,
+             blurb:'grade 7 × and ÷' },
+  seline:  { denoms:[2,3,4,5,6,7,8,9,10,12,15,16,20], ops:['×','÷'], improper:true,
+             blurb:'challenge × and ÷' }
+};
+function genQuestion(level, op){
+  const cfg = LEVELS[level] || LEVELS.remy;
   let a,b,c,d,guard = 0;
   do{
-    b = pick(DENOMS); d = pick(DENOMS);
-    a = 1 + rnd(b - 1); c = 1 + rnd(d - 1);
+    b = pick(cfg.denoms); d = pick(cfg.denoms);
+    if (cfg.improper && Math.random() < 0.45){
+      a = 1 + rnd(b + (b >> 1)); c = 1 + rnd(d + (d >> 1)); // may be improper
+    } else {
+      a = 1 + rnd(b - 1); c = 1 + rnd(d - 1);
+    }
     guard++;
   }while(a * c === 1 && guard < 20);
-  if (!op) op = Math.random() < 0.5 ? '×' : '÷';
-  return { op, a, b, c, d, id: op + a + '/' + b + '_' + c + '/' + d };
+  if (!op) op = pick(cfg.ops);
+  return { op, a, b, c, d, id: level + '|' + op + a + '/' + b + '_' + c + '/' + d };
 }
 /* the multiplication actually performed (after any flip) */
 function multParts(q){
@@ -252,8 +264,10 @@ let hintTier = 0, hintUsedQ = false, wrongQ = false, roundStars = 0;
 let selBox = null;
 const seenIds = new Set();
 
-function buildSteps(q){
-  const s = [{ key:'method' }];
+function buildSteps(q, level){
+  const cfg = LEVELS[level] || LEVELS.remy;
+  const s = [];
+  if (cfg.ops.length > 1) s.push({ key:'method' }); // skip when only one op exists
   if (q.op === '÷') s.push({ key:'flip' });
   s.push({ key:'multTop' }, { key:'multBot' }, { key:'simplify' });
   return s;
@@ -285,11 +299,14 @@ function startRound(){
   newQuestion();
 }
 function newQuestion(sameOp){
+  // sameOp === undefined → fresh random op for the level (mixed rounds);
+  // a passed op (wrong-answer retry) keeps that op for a similar question.
+  const opArg = (sameOp === undefined) ? null : (sameOp || (q ? q.op : null));
   let nq, guard = 0;
-  do { nq = genQuestion(sameOp || (q ? q.op : null)); guard++; }
+  do { nq = genQuestion(level, opArg); guard++; }
   while (seenIds.has(nq.id) && guard < 40);
   seenIds.add(nq.id);
-  q = nq; steps = buildSteps(q); si = 0;
+  q = nq; steps = buildSteps(q, level); si = 0;
   hintTier = 0; hintUsedQ = false; wrongQ = false;
   renderDots(); renderStep();
 }
@@ -529,7 +546,7 @@ function showParents(){
     '<div class="kv"><span>Stars earned</span><span>★ ' + S.stars + '</span></div>' +
     '<div class="kv"><span>Best streak</span><span>' + S.bestStreak + '</span></div>' +
     '<div class="kv"><span>Rounds played</span><span>' + S.rounds + '</span></div>' +
-    '<h4 style="margin:.8em 0 .2em">Remy — per step</h4>' + rows +
+    '<h4 style="margin:.8em 0 .2em">All levels — per step</h4>' + rows +
     '<p class="device-note">Progress is saved only on this device.</p>',
     [
       { label:'Reset progress', onClick:confirmReset },

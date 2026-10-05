@@ -242,24 +242,22 @@ h2{font-size:clamp(24px,6vw,30px);margin:0 0 8px;font-weight:700;text-align:cent
       <span>Slice &amp; Solve</span>
     </div>
     <h1 id="hStart">Who's playing?</h1>
-    <p class="sub">This pilot is Remy's level — tap Start when you're ready. Every question is patient with you: no timers, no lives.</p>
+    <p class="sub">Pick who's playing, then tap Start. Every question is patient with you: no timers, no lives.</p>
     <div class="levels" role="group" aria-label="Choose your level">
-      <!-- Pilot lock: remove class "coming-soon" and the disabled attribute to make this level playable -->
-      <button type="button" class="level coming-soon" data-level="adeline" aria-pressed="false" disabled>
-        <span class="lv-row"><span class="lv-name">Adeline</span><span class="lv-tag">Gentle start</span><span class="lv-badge soon">Coming soon</span></span>
+      <button type="button" class="level" data-level="adeline" aria-pressed="false">
+        <span class="lv-row"><span class="lv-name">Adeline</span><span class="lv-tag">Gentle start</span></span>
         <span class="lv-blurb">Starts with easy same-bottom fractions, then simple unlike ones — halves, thirds, quarters. Sums stay under 1.</span>
-        <span class="lv-meta">Feels like grades 4–5</span>
+        <span class="lv-meta">Feels like grades 4–5 · <span class="lv-stats" data-s="adeline">no rounds yet</span></span>
       </button>
       <button type="button" class="level" data-level="remi" aria-pressed="true">
         <span class="lv-row"><span class="lv-name">Remy</span><span class="lv-tag">Grade 7 core</span><span class="lv-badge">Selected</span></span>
         <span class="lv-blurb">Unlike denominators from 2 to 12 — spot the common denominator first. Some answers need mixed numbers.</span>
         <span class="lv-meta">Feels like grade 7 · <span class="lv-stats" data-s="remi">no rounds yet</span></span>
       </button>
-      <!-- Pilot lock: remove class "coming-soon" and the disabled attribute to make this level playable -->
-      <button type="button" class="level coming-soon" data-level="seline" aria-pressed="false" disabled>
-        <span class="lv-row"><span class="lv-name">Seline</span><span class="lv-tag">Challenge</span><span class="lv-badge soon">Coming soon</span></span>
+      <button type="button" class="level" data-level="seline" aria-pressed="false">
+        <span class="lv-row"><span class="lv-name">Seline</span><span class="lv-tag">Challenge</span></span>
         <span class="lv-blurb">Bigger denominators, three-part expressions like a + b − c, plus mixed numbers inside the questions.</span>
-        <span class="lv-meta">Feels like grade 9+</span>
+        <span class="lv-meta">Feels like grade 9+ · <span class="lv-stats" data-s="seline">no rounds yet</span></span>
       </button>
     </div>
     <button type="button" class="btn big" id="btnStart">Start with Remy</button>
@@ -280,7 +278,7 @@ h2{font-size:clamp(24px,6vw,30px);margin:0 0 8px;font-weight:700;text-align:cent
         <li>No timers and no lives. A wrong step just brings a kind explanation and a similar question to try.</li>
         <li>A star for every question solved with no hints and no wrong steps; streaks build quietly as you go.</li>
         <li>Stuck? Tap <b>Need a nudge?</b> on any step — each step has two hints that guide you without giving away the answer.</li>
-        <li>The other levels are on the way — for now, this pilot is Remy's level.</li>
+        <li>Three levels to choose from: Adeline's gentle start, Remy's grade-7 core, and Seline's challenge.</li>
       </ul>
     </details>
     <p class="footnote tiny">Progress is saved only on this device.</p>
