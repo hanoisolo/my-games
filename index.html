@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Games Hub - inguyen.ca</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -89,7 +90,9 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
       transition: var(--transition);
       position: relative;
-      height: 300px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
       cursor: pointer;
     }
     
@@ -99,7 +102,8 @@
     }
     
     .game-card .game-img {
-      height: 65%;
+      height: 195px;
+      flex-shrink: 0;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -119,7 +123,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      height: 35%;
+      flex: 1;
     }
     
     .game-title {
@@ -146,6 +150,7 @@
       transition: var(--transition);
       text-align: center;
       font-size: 0.9rem;
+      align-self: flex-start;
     }
     
     .play-button:hover {
@@ -326,7 +331,7 @@
   <a href="https://x.com/hanoi_solo" class="social-icon" target="_blank"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/don-nguyen/" class="social-icon" target="_blank"><i class="fab fa-linkedin"></i></a>
 </div>
-      <p>&copy; 2025 inguyen.ca | All Rights Reserved</p>
+      <p>&copy; 2026 inguyen.ca | All Rights Reserved</p>
     </div>
   </footer>
 </body>
