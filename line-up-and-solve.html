@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Line Up &amp; Solve — Decimals +, −, ×, ÷</title>
+<style>
+:root{
+  --bg:#f3f5fa; --ink:#2c3550; --muted:#6b7490;
+  --card:#ffffff; --line:#e2e7f0;
+  --accent:#4a7c59; --accent-soft:#e4efe7;
+  --blue:#5b7fa6; --blue-soft:#e3eaf5;
+  --gold:#c9a227; --gold-soft:#faf3dd;
+  --warn:#b7794c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+#app{max-width:540px;margin:0 auto;min-height:100vh;padding:20px 16px 220px}
+.hidden{display:none !important}
+h1{font-size:2rem;margin:.2em 0 .1em;text-align:center}
+.tag{text-align:center;color:var(--muted);margin:0 0 1.2em}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.levels{display:flex;flex-direction:column;gap:10px;margin:0 0 1em}
+button.level{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;font-size:1.15rem;border-radius:16px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.level:not(:disabled):active{transform:scale(.98)}
+button.level:disabled{opacity:.55;cursor:default}
+button.level.sel{border-color:var(--accent);background:var(--accent-soft)}
+button.level em{font-style:normal;font-size:.85rem;color:var(--muted)}
+.badge{font-size:.75rem;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:2px 10px}
+details.how{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 1em}
+details.how summary{cursor:pointer;font-weight:600}
+.linklike{background:none;border:none;color:var(--blue);font-size:1rem;cursor:pointer;display:block;margin:0 auto;text-decoration:underline}
+.device-note{text-align:center;color:var(--muted);font-size:.85rem;margin-top:1.2em}
+/* topbar */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.topbar #btn-back{font-size:1.5rem;border:1px solid var(--line);background:var(--card);border-radius:12px;width:44px;height:44px;cursor:pointer;color:var(--ink)}
+#q-counter{font-weight:600;color:var(--muted);flex:1}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.pill b{margin-left:2px}
+#dots{display:flex;gap:6px;justify-content:center;margin:4px 0 12px}
+#dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+#dots i.done{background:var(--accent)}
+#dots i.now{background:var(--blue)}
+/* prompt panel */
+.prompt-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px}
+.prompt-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.prompt-head h2{font-size:1.2rem;margin:0}
+.hint-btn{border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:8px 14px;font-size:.95rem;cursor:pointer;white-space:nowrap}
+.hint-btn:disabled{opacity:.4;cursor:default}
+.hint-btn.used{border-style:solid}
+.p-sub{color:var(--muted);margin:.4em 0 .8em}
+#question-line{font-size:1.5rem;text-align:center;margin:.4em 0 .6em}
+#visual{margin:.4em auto;max-width:360px}
+#answer-zone{display:flex;justify-content:center;align-items:center;gap:10px;margin:14px 0;min-height:76px;flex-wrap:wrap}
+button.primary{display:block;width:100%;margin-top:6px;padding:15px;font-size:1.15rem;border:none;border-radius:14px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+button.primary:active{transform:scale(.99)}
+button.ghost{display:block;width:100%;margin-top:8px;padding:13px;font-size:1.05rem;border-radius:14px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+/* answer boxes */
+.abox{min-width:64px;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fbfcff;font-size:1.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:4px 10px}
+.abox.sel{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 2px var(--blue-soft)}
+.abox.wide{min-width:150px}
+.op-symbol{font-size:1.8rem;color:var(--muted)}
+/* method choice */
+.choice{display:block;width:100%;padding:16px;margin:6px 0;font-size:1.1rem;border-radius:14px;border:2px solid var(--line);background:#fbfcff;cursor:pointer;color:var(--ink)}
+.choice:active{transform:scale(.99)}
+/* place-value stack */
+.stack{display:inline-block;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:1.5rem;line-height:1.5;text-align:right}
+.stack .dp{color:var(--warn);font-weight:700}
+.stack .op{display:inline-block;width:1.3em;text-align:center;color:var(--muted)}
+.stack .row{display:block;white-space:pre}
+.stackwrap{text-align:center;margin:.3em 0}
+.picklay{border:2px solid var(--line);border-radius:14px;background:#fbfcff;padding:12px 8px;margin:6px 0;cursor:pointer;width:100%;color:var(--ink)}
+.picklay:active{transform:scale(.99)}
+/* number pad */
+#pad{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:540px;margin:0 auto;z-index:5}
+#pad button{font-size:1.45rem;padding:11px;border-radius:12px;border:1px solid var(--line);background:#f7f9fc;color:var(--ink);cursor:pointer}
+#pad button:active{background:var(--blue-soft)}
+#pad button.fn{font-size:1.05rem;color:var(--muted)}
+#pad button.clear{grid-column:1/4;font-size:1.05rem;color:var(--muted)}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(44,53,80,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay .card{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px 20px;max-height:86vh;overflow:auto}
+.overlay h3{margin:.1em 0 .5em;font-size:1.25rem}
+.overlay .card p{margin:.5em 0}
+#ov-actions{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.98rem}
+.kv:last-child{border-bottom:none}
+.star-note{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:.95rem;margin-top:10px}
+.gentle{background:var(--blue-soft);border-radius:12px;padding:10px 12px;font-size:.98rem}
+.big-dec{font-size:1.8rem;text-align:center;margin:.3em 0}
+.shift-arrow{text-align:center;font-size:1.4rem;color:var(--blue);margin:.1em 0}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen">
+    <h1>Line Up &amp; Solve</h1>
+    <p class="tag">Decimals: adding, subtracting, multiplying &amp; dividing</p>
+    <div class="levels">
+      <button class="level" data-level="adeline"><span>Adeline</span><em>Gentle · + and −</em></button>
+      <button class="level sel" data-level="remy"><span>Remy</span><em>Grade 7 · +, −, ×, ÷</em></button>
+      <button class="level" data-level="seline"><span>Seline</span><em>Challenge · +, −, ×, ÷</em></button>
+    </div>
+    <details class="how">
+      <summary>How it works</summary>
+      <p>Each question walks you through the steps: pick the right method, line up the digits or place the decimal point, then solve. Stuck on a step? Tap <b>Need a nudge?</b> for a hint that guides you without giving the answer.</p>
+      <p>Stars are earned by solving a question with no hints and no wrong steps. Using a hint still counts as solved — it just doesn't earn a star. They have to be earned!</p>
+    </details>
+    <button id="btn-parents-start" class="linklike">For parents</button>
+    <p class="device-note">Progress is saved only on this device.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen hidden">
+    <div class="topbar">
+      <button id="btn-back" aria-label="Back">‹</button>
+      <span id="q-counter"></span>
+      <span class="pill">★ <b id="star-count">0</b></span>
+      <span class="pill">streak <b id="streak-count">0</b></span>
+    </div>
+    <div id="dots"></div>
+    <div class="prompt-panel">
+      <div class="prompt-head">
+        <h2 id="step-title"></h2>
+        <button id="btn-hint" class="hint-btn">Need a nudge?</button>
+      </div>
+      <p id="step-sub" class="p-sub"></p>
+      <div id="question-line"></div>
+      <div id="visual"></div>
+      <div id="answer-zone"></div>
+      <button id="btn-check" class="primary">Check</button>
+    </div>
+  </section>
+
+  <!-- NUMBER PAD -->
+  <div id="pad" class="hidden">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k=".">.</button><button data-k="0">0</button><button data-k="back" class="fn">⌫</button>
+    <button data-k="clear" class="clear">Clear</button>
+  </div>
+
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay hidden">
+    <div class="card">
+      <h3 id="ov-title"></h3>
+      <div id="ov-body"></div>
+      <div id="ov-actions"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = arr => arr[rnd(arr.length)];
+const ri = (lo, hi) => lo + rnd(hi - lo + 1); // inclusive int
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* exact decimal arithmetic: value = n / 10^dp, n integer */
+function D(str){
+  str = String(str).trim();
+  let neg = false;
+  if (str[0] === '-'){ neg = true; str = str.slice(1); }
+  const p = str.split('.');
+  const ip = p[0] || '0', fp = p[1] || '';
+  let n = parseInt(ip + fp, 10); if (isNaN(n)) n = 0;
+  if (neg) n = -n;
+  return { n:n, dp:fp.length };
+}
+function dNorm(d){
+  let n = d.n, dp = d.dp;
+  while (dp > 0 && n % 10 === 0){ n = n / 10; dp--; }
+  return { n:n, dp:dp };
+}
+function dAdd(a, b){
+  const dp = Math.max(a.dp, b.dp);
+  const n = a.n * Math.pow(10, dp - a.dp) + b.n * Math.pow(10, dp - b.dp);
+  return dNorm({ n:n, dp:dp });
+}
+function dSub(a, b){ return dAdd(a, { n:-b.n, dp:b.dp }); }
+function dMul(a, b){ return dNorm({ n:a.n * b.n, dp:a.dp + b.dp }); }
+function dStr(d){
+  const neg = d.n < 0;
+  let s = String(Math.abs(d.n)).padStart(d.dp + 1, '0');
+  const intp = s.slice(0, s.length - d.dp) || '0';
+  const fp = s.slice(s.length - d.dp);
+  return (neg ? '-' : '') + intp + (d.dp ? '.' + fp : '');
+}
+function dVal(d){ return d.n / Math.pow(10, d.dp); }
+/* answer for exact division a/b (b nonzero), fully terminated by construction */
+function dDivExact(a, b){
+  const dp = Math.max(a.dp, b.dp, 1);
+  const scaled = dMul(a, D('1' + '0'.repeat(dp))); // a * 10^dp
+  return dNorm({ n: Math.round(scaled.n / b.n * Math.pow(10, b.dp)), dp: dp });
+}
+/* ================= store (this device only) ================= */
+const STORE_KEY = 'lineupandsolve.v1';
+const STEP_NAMES = {
+  method: 'Choosing the method',
+  lineup: 'Lining up the decimal points',
+  places: 'Counting decimal places',
+  shift:  'Shifting the point in division',
+  solve:  'Computing the answer'
+};
+function blankStore(){ return { stars:0, bestStreak:0, streak:0, rounds:0, steps:{} }; }
+function loadStore(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && typeof s === 'object'){ const b = blankStore(); return Object.assign(b, s); }
+  }catch(e){}
+  return blankStore();
+}
+let S = loadStore();
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+function st(key){
+  if (!S.steps[key]) S.steps[key] = { a:0, c:0, h:0 };
+  return S.steps[key];
+}
+function recordStep(key, ok){
+  const s = st(key); s.a++; if (ok) s.c++; save();
+}
+function recordHint(key){ st(key).h++; save(); }
+
+/* ================= question generator ================= */
+/* Levels follow the weekly worksheet set:
+   Adeline (~grade 5): gentle + and −, tenths/hundredths.
+   Remy (grade 7): full set +, −, ×, ÷ (matches 3_Decimals_Operations_G7.pdf).
+   Seline (~grade 9/10): harder ranges, division rounded to 2 dp. */
+const LEVELS = {
+  adeline: { ops:['+','−'], dpMax:2, blurb:'gentle + and −' },
+  remy:    { ops:['+','−','×','÷'], dpMax:3, blurb:'grade 7 +, −, ×, ÷' },
+  seline:  { ops:['+','−','×','÷'], dpMax:3, blurb:'challenge +, −, ×, ÷' }
+};
+const OPSYM = { '+':'+', '−':'−', '×':'×', '÷':'÷' };
+
+function decStr(intPartMax, dp){
+  // random decimal with 1..dp decimal places, at least one nonzero fractional digit
+  let s, guard = 0;
+  do{
+    const ip = ri(0, intPartMax);
+    let fp = '';
+    const fdp = 1 + rnd(dp);
+    for (let i = 0; i < fdp; i++) fp += String(rnd(10));
+    s = ip + '.' + fp;
+    guard++;
+  }while(/\.0+$/.test(s) && guard < 30);
+  return s;
+}
+function dgt(str){ return D(str); }
+
+function genAddSub(level, op){
+  let A, B, guard = 0;
+  const cfg = LEVELS[level];
+  do{
+    if (level === 'adeline'){ A = decStr(9, 2); B = decStr(9, 2); }
+    else if (level === 'remy'){
+      A = decStr(ri(9, 99), ri(1, 3)); B = decStr(ri(9, 99), ri(1, 3));
+      if (Math.random() < 0.25){ A = decStr(99, 3); B = decStr(99, 3); } // worksheet-style thousands
+    } else { A = decStr(ri(9, 99), 3); B = decStr(ri(9, 99), 3); }
+    guard++;
+  }while(
+    (op === '−' && dVal(dgt(A)) <= dVal(dgt(B))) ||   // keep results positive
+    (op === '+' && dVal(dAdd(dgt(A), dgt(B))) >= (level === 'adeline' ? 20 : 1000)) ||
+    guard < 5 && /^(0|0\.0+)$/.test(A + B) ||
+    guard > 60
+  );
+  if (guard > 60 && op === '−' && dVal(dgt(A)) <= dVal(dgt(B))){ const t = A; A = B; B = t; }
+  const ans = op === '+' ? dAdd(dgt(A), dgt(B)) : dSub(dgt(A), dgt(B));
+  return { op, a:A, b:B, ans:dStr(ans), id: level + '|' + op + '|' + A + '|' + B };
+}
+function genMul(level){
+  let A, B, ans, guard = 0;
+  do{
+    if (level === 'adeline'){ return genAddSub(level, '+'); } // Adeline is +/− only
+    else if (level === 'remy'){ A = decStr(9, ri(1, 2)); B = decStr(9, 1); }
+    else { A = decStr(ri(9, 99), 2); B = decStr(ri(9, 99), 2); }
+    ans = dMul(dgt(A), dgt(B));
+    guard++;
+  }while(
+    (dVal(dgt(A)) < 0.2 || dVal(dgt(B)) < 0.2 ||           // avoid trivial tinies
+     /^(1(\.0+)?|10(\.0+)?)$/.test(A) || /^(1(\.0+)?|10(\.0+)?)$/.test(B) ||
+     ans.dp > 4 || dVal(ans) < 0.1) &&
+    guard < 60
+  );
+  return { op:'×', a:A, b:B, ans:dStr(ans), id: level + '|×|' + A + '|' + B };
+}
+function genDiv(level){
+  let A, B, ans, guard = 0;
+  if (level === 'seline'){
+    // non-terminating division; answer rounded to 2 decimal places
+    do{
+      B = decStr(9, 1);                    // divisor, 1 dp, 0.1–9.9
+      A = decStr(ri(9, 99), ri(1, 2));     // dividend
+      const bv = dVal(dgt(B)), av = dVal(dgt(A));
+      if (bv < 0.2 || av <= bv) continue;
+      const r = av / bv;
+      if (Math.abs(r * 100 - Math.round(r * 100)) < 1e-9) continue;      // must need rounding
+      if (Math.abs((r * 100) % 1 - 0.5) < 1e-9) continue;                 // avoid .xx5 tie
+      const h = Math.round(r * 100) / 100;
+      if (h < 1 || h > 999) continue;
+      ans = h.toFixed(2);
+      guard++;
+      break;
+    }while(guard < 200);
+  } else {
+    // terminating division: pick quotient then divisor, dividend = quotient × divisor
+    do{
+      const q = decStr(ri(1, 12), ri(1, 2));
+      B = decStr(9, 1);
+      const qv = dVal(dgt(q)), bv = dVal(dgt(B));
+      if (bv < 0.2 || qv < 1) continue;
+      const Adec = dMul(dgt(q), dgt(B));
+      A = dStr(Adec);
+      if (Adec.dp > 3) continue;
+      ans = dStr(dNorm(dgt(q)));
+      guard++;
+      break;
+    }while(guard < 200);
+  }
+  if (ans === undefined){ A = '6'; B = '3'; ans = '2'; } // unreachable fallback
+  return { op:'÷', a:A, b:B, ans:ans, id: level + '|÷|' + A + '|' + B, rounded: level === 'seline' };
+}
+function genQuestion(level, op){
+  const cfg = LEVELS[level] || LEVELS.remy;
+  if (!op) op = pick(cfg.ops);
+  if (op === '+' || op === '−') return genAddSub(level, op);
+  if (op === '×') return genMul(level);
+  return genDiv(level);
+}
+/* shift step: move the decimal to make the divisor a whole number */
+function shiftPair(q){
+  const b = D(q.b), k = b.dp;
+  const nb = String(b.n);
+  const av = dMul(D(q.a), D('1' + '0'.repeat(k)));
+  return { k:k, newDivisor: nb, newDividend: dStr(dNorm(av)) };
+}
+/* decimal places in the product answer */
+function placesAnswer(q){
+  return D(q.a).dp + D(q.b).dp;
+}
+
+/* ================= visuals ================= */
+/* stacked layout: aligned=true lines up the decimal points (correct);
+   aligned=false right-aligns the numbers so the points do NOT line up (wrong) */
+function stackedHTML(a, b, op, aligned){
+  const da = D(a), db = D(b);
+  const full = d => String(Math.abs(d.n)).padStart(d.dp + 1, '0');
+  const s1 = full(da), s2 = full(db);
+  const intW = Math.max(s1.length - da.dp, s2.length - db.dp);
+  const fracW = Math.max(da.dp, db.dp);
+  function row(str, withOp){
+    const d = D(str);
+    const s = full(d);
+    const intp = s.slice(0, s.length - d.dp).padStart(intW, '\u00a0');
+    let fp = d.dp ? s.slice(s.length - d.dp) : '';
+    if (aligned) fp = fp.padEnd(fracW, '\u00a0');
+    let cells = '';
+    for (const ch of intp) cells += esc(ch);
+    cells += '<span class="dp">.</span>';
+    for (const ch of fp) cells += esc(ch);
+    return '<span class="row"><span class="op">' + (withOp ? op : '') + '</span>' + cells + '</span>';
+  }
+  return '<div class="stack">' + row(a, false) + row(b, true) + '</div>';
+}
+/* ================= game flow ================= */
+const ROUND_N = 8;
+let level = 'remy';
+let qi = 0, q = null, steps = [], si = 0;
+let hintTier = 0, hintUsedQ = false, wrongQ = false, roundStars = 0;
+let selBox = null;
+const seenIds = new Set();
+
+function buildSteps(q, level){
+  const s = [{ key:'method' }];
+  if (q.op === '+' || q.op === '−') s.push({ key:'lineup' });
+  else if (q.op === '×') s.push({ key:'places' });
+  else s.push({ key:'shift' });
+  s.push({ key:'solve' });
+  return s;
+}
+function stepNum(){ return si + 1; }
+
+function showScreen(name){
+  $('screen-start').classList.toggle('hidden', name !== 'start');
+  $('screen-game').classList.toggle('hidden', name !== 'game');
+  if (name !== 'game') $('pad').classList.add('hidden');
+}
+function updatePills(){
+  $('star-count').textContent = S.stars;
+  $('streak-count').textContent = S.streak;
+}
+function renderDots(){
+  const d = $('dots'); d.innerHTML = '';
+  for (let i = 0; i < ROUND_N; i++){
+    const el = document.createElement('i');
+    if (i < qi) el.className = 'done';
+    else if (i === qi) el.className = 'now';
+    d.appendChild(el);
+  }
+}
+
+function startRound(){
+  qi = 0; roundStars = 0; seenIds.clear();
+  showScreen('game'); updatePills();
+  newQuestion();
+}
+function newQuestion(sameOp){
+  const opArg = (sameOp === undefined) ? null : (sameOp || (q ? q.op : null));
+  let nq, guard = 0;
+  do { nq = genQuestion(level, opArg); guard++; }
+  while (seenIds.has(nq.id) && guard < 40);
+  seenIds.add(nq.id);
+  q = nq; steps = buildSteps(q, level); si = 0;
+  hintTier = 0; hintUsedQ = false; wrongQ = false;
+  renderDots(); renderStep();
+}
+function nextStep(){
+  si++; hintTier = 0;
+  if (si >= steps.length) questionDone();
+  else renderStep();
+}
+function questionDone(){
+  if (!hintUsedQ && !wrongQ){ S.stars++; roundStars++; }
+  S.streak++; if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+  save(); updatePills(); qi++;
+  if (qi >= ROUND_N) roundDone();
+  else newQuestion();
+}
+function roundDone(){
+  S.rounds++; save();
+  showOverlay('Round complete!',
+    '<p style="font-size:1.2rem;text-align:center">You earned <b>★ ' + roundStars + '</b> this round.</p>' +
+    (roundStars < ROUND_N ? '<p class="gentle">Hints are there when you need them — but stars are earned by solving cleanly. Try another round!</p>' : '<p class="gentle">A perfect round — every question solved with no hints and no wrong steps!</p>'),
+    [
+      { label:'Play again', primary:true, onClick:startRound },
+      { label:'Back to start', onClick:()=>showScreen('start') }
+    ]);
+}
+
+/* ---------- overlays ---------- */
+function showOverlay(title, bodyHTML, buttons){
+  $('ov-title').textContent = title;
+  $('ov-body').innerHTML = bodyHTML;
+  const az = $('ov-actions'); az.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.primary ? 'primary' : 'ghost';
+    btn.textContent = b.label;
+    btn.onclick = () => { hideOverlay(); if (b.onClick) b.onClick(); };
+    az.appendChild(btn);
+  });
+  $('overlay').classList.remove('hidden');
+}
+function hideOverlay(){ $('overlay').classList.add('hidden'); }
+
+function showExplain(html){
+  showOverlay('Pause & learn',
+    '<div class="gentle">' + html + '</div><p>No stress — let\'s try a similar one.</p>',
+    [{ label:'Try a similar one', primary:true, onClick:() => newQuestion(q.op) }]);
+}
+
+/* ---------- hints (never name the step's answer) ---------- */
+const METHOD_RULES = {
+  '+': 'Line up the decimal points, then add like whole numbers.',
+  '−': 'Line up the decimal points, then subtract like whole numbers.',
+  '×': 'Multiply like whole numbers, then put the point back using place count.',
+  '÷': 'Shift the point to make the divisor whole, then divide.'
+};
+function hintText(key, tier){
+  if (key === 'method'){
+    if (tier === 1) return 'The method depends on the sign. <b>+ or −</b>: something about lining up. <b>×</b>: something about counting places. <b>÷</b>: something about making the divisor whole. Which sign do you see?';
+    return 'This question uses <b>' + OPSYM[q.op] + '</b>. With <b>+ or −</b> the first move is about the dots; with <b>×</b> it is about counting places; with <b>÷</b> it is about the divisor. Which button describes that first move?';
+  }
+  if (key === 'lineup'){
+    if (tier === 1) return 'The ones column must sit under the ones column, tenths under tenths, hundredths under hundredths. The decimal points should form one straight column. Which layout does that?';
+    return 'Line up the <b>dots</b>, not the right edges. Pick the layout where the dots sit in a straight vertical column.';
+  }
+  if (key === 'places'){
+    const d1 = D(q.a).dp, d2 = D(q.b).dp;
+    if (tier === 1) return 'Count how many digits sit after the point in <b>each</b> number, then add those two counts together.';
+    return esc(q.a) + ' has <b>' + d1 + '</b> digit' + (d1 === 1 ? '' : 's') + ' after the point; ' + esc(q.b) + ' has <b>' + d2 + '</b>. Add those two counts — that\'s the answer\'s place count.';
+  }
+  if (key === 'shift'){
+    const sp = shiftPair(q);
+    if (tier === 1) return 'Move the divisor\'s point right until the divisor is a whole number — then move the dividend\'s point right the <b>same</b> number of places.';
+    return 'The divisor ' + esc(q.b) + ' needs its point moved <b>' + sp.k + '</b> place' + (sp.k === 1 ? '' : 's') + ' to become whole. Move the dividend\'s point the same distance — what do both numbers become?';
+  }
+  if (key === 'solve'){
+    if (q.op === '+' || q.op === '−'){
+      if (tier === 1) return 'Work one column at a time, starting at the right, carrying (or borrowing) exactly like whole numbers. The point in the answer drops straight down.';
+      return 'The lined-up columns are: ' + esc(q.a) + ' ' + OPSYM[q.op] + ' ' + esc(q.b) + '. Do the rightmost column first — what\'s the full answer?';
+    }
+    if (q.op === '×'){
+      const w1 = String(D(q.a).n), w2 = String(D(q.b).n);
+      if (tier === 1) return 'Cover the points and multiply the whole numbers: <b>' + w1 + ' × ' + w2 + '</b>. Then use your place count to put the point back.';
+      return w1 + ' × ' + w2 + ' = <b>?</b> — then place the point using ' + placesAnswer(q) + ' decimal place' + (placesAnswer(q) === 1 ? '' : 's') + '.';
+    }
+    if (q.op === '÷'){
+      const sp = shiftPair(q);
+      if (tier === 1) return 'Divide <b>' + esc(sp.newDividend) + ' ÷ ' + esc(sp.newDivisor) + '</b> like whole numbers. Each digit of the quotient goes straight above the digit you just divided into.';
+      if (q.rounded) return 'Keep dividing until you have <b>three</b> digits after the point, then round the answer to <b>two</b> places.';
+      return 'The shifted division is ' + esc(sp.newDividend) + ' ÷ ' + esc(sp.newDivisor) + '. Work it out digit by digit — what\'s the quotient?';
+    }
+  }
+  return '';
+}
+function onHint(){
+  const key = steps[si].key;
+  hintTier++;
+  hintUsedQ = true; recordHint(key);
+  const b = $('btn-hint'); b.classList.add('used');
+  const btns = [{ label:'Got it', primary:true }];
+  if (hintTier === 1) btns.push({ label:'Still stuck?', onClick:onHint });
+  else { b.disabled = true; b.textContent = 'No more hints — give it a try!'; }
+  showOverlay('A nudge for this step', '<p>' + hintText(key, hintTier) + '</p>' +
+    '<div class="star-note">Using a hint means no star for this question — but solving it still counts. Stars have to be earned!</div>', btns);
+}
+
+/* ---------- explanations for wrong answers ---------- */
+function explainText(key){
+  if (key === 'method') return 'For <b>' + OPSYM[q.op] + '</b>: ' + METHOD_RULES[q.op];
+  if (key === 'lineup') return 'Stack the numbers so the <b>decimal points line up</b>:<div class="stackwrap">' + stackedHTML(q.a, q.b, q.op, true) + '</div>Then add or subtract each column like whole numbers, and the point drops straight down.';
+  if (key === 'places') return esc(q.a) + ' has ' + D(q.a).dp + ' digit(s) after the point and ' + esc(q.b) + ' has ' + D(q.b).dp + ' — so the answer needs <b>' + placesAnswer(q) + '</b> decimal places.';
+  if (key === 'shift'){
+    const sp = shiftPair(q);
+    return 'Move both points ' + sp.k + ' place(s) right: ' + esc(q.a) + ' ÷ ' + esc(q.b) + ' becomes <b>' + esc(sp.newDividend) + ' ÷ ' + esc(sp.newDivisor) + '</b>. Now divide like whole numbers.';
+  }
+  if (key === 'solve') return 'The answer is <b>' + esc(q.ans) + '</b>.' + (q.rounded ? ' (rounded to 2 decimal places)' : '');
+  return '';
+}
+
+/* ---------- answer zone ---------- */
+function boxHTML(wide){ return '<div class="abox' + (wide ? ' wide' : '') + '" tabindex="0"></div>'; }
+function wireBoxes(){
+  const boxes = Array.prototype.slice.call($('answer-zone').querySelectorAll('.abox'));
+  boxes.forEach(b => b.addEventListener('click', () => selectBox(b)));
+  if (boxes.length) selectBox(boxes[0]);
+}
+function selectBox(b){
+  Array.prototype.forEach.call($('answer-zone').querySelectorAll('.abox'), x => x.classList.remove('sel'));
+  b.classList.add('sel'); selBox = b;
+}
+function boxVals(){
+  return Array.prototype.map.call($('answer-zone').querySelectorAll('.abox'), b => b.textContent.trim());
+}
+
+/* ---------- step rendering ---------- */
+function setStep(title, sub, qline, visual, showCheck, showPad){
+  $('step-title').textContent = title;
+  $('step-sub').innerHTML = sub;
+  $('question-line').innerHTML = qline;
+  $('visual').innerHTML = visual || '';
+  $('btn-check').classList.toggle('hidden', !showCheck);
+  $('pad').classList.toggle('hidden', !showPad);
+  const hb = $('btn-hint');
+  hb.disabled = false; hb.textContent = 'Need a nudge?'; hb.classList.remove('used');
+  $('q-counter').textContent = 'Question ' + (qi + 1) + ' of ' + ROUND_N;
+  renderDots();
+}
+
+function renderStep(){
+  const key = steps[si].key, n = stepNum();
+  wireHintOnce();
+  if (key === 'method'){
+    setStep('Step ' + n + ': Pick the method',
+      'Which rule fits this question?',
+      eqLine(q), '', false, false);
+    const az = $('answer-zone'); az.innerHTML = '';
+    const choices = [
+      ['lineup', 'Line up the decimal points'],
+      ['places', 'Multiply like whole numbers, then place the point'],
+      ['shift',  'Make the divisor whole, then divide']
+    ];
+    choices.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.className = 'choice'; b.textContent = label;
+      b.onclick = () => {
+        const ok = (v === 'lineup' && (q.op === '+' || q.op === '−')) ||
+                   (v === 'places' && q.op === '×') ||
+                   (v === 'shift' && q.op === '÷');
+        recordStep('method', ok);
+        if (ok) nextStep();
+        else { wrongQ = true; showExplain(explainText('method')); }
+      };
+      az.appendChild(b);
+    });
+    return;
+  }
+  if (key === 'lineup'){
+    const correctFirst = Math.random() < 0.5;
+    setStep('Step ' + n + ': Line up the points',
+      'Pick the layout that lines up correctly.',
+      eqLine(q),
+      '<p class="p-sub" style="text-align:center">Where should the decimal points sit?</p>',
+      false, false);
+    const az = $('answer-zone'); az.innerHTML = '';
+    const layouts = [
+      { aligned:true,  html: stackedHTML(q.a, q.b, q.op, true) },
+      { aligned:false, html: stackedHTML(q.a, q.b, q.op, false) }
+    ];
+    if (!correctFirst) layouts.reverse();
+    layouts.forEach(L => {
+      const b = document.createElement('button');
+      b.className = 'picklay';
+      b.innerHTML = '<div class="stackwrap">' + L.html + '</div>';
+      b.onclick = () => {
+        recordStep('lineup', L.aligned);
+        if (L.aligned) nextStep();
+        else { wrongQ = true; showExplain(explainText('lineup')); }
+      };
+      az.appendChild(b);
+    });
+    return;
+  }
+  if (key === 'places'){
+    setStep('Step ' + n + ': Count the places',
+      'How many decimal places will the answer have?',
+      eqLine(q), placesVisualHTML(q.a, q.b), true, true);
+    $('answer-zone').innerHTML = boxHTML(); wireBoxes();
+    return;
+  }
+  if (key === 'shift'){
+    const sp = shiftPair(q);
+    setStep('Step ' + n + ': Shift the point',
+      'Type the division with a whole-number divisor.',
+      eqLine(q), shiftVisualHTML(q),
+      true, true);
+    const az = $('answer-zone'); az.innerHTML =
+      boxHTML(true) + '<span class="op-symbol">÷</span>' + boxHTML(true);
+    az.insertAdjacentHTML('afterbegin', '<span class="p-sub" style="width:100%;text-align:center;margin:0">new dividend&nbsp;&nbsp;&nbsp;&nbsp;new divisor</span>');
+    wireBoxes();
+    return;
+  }
+  if (key === 'solve'){
+    let sub = 'Type your answer using the number pad.';
+    let vis = '<div class="stackwrap">' + stackedHTML(q.a, q.b, q.op, true) + '</div>';
+    if (q.op === '×') vis = placesVisualHTML(q.a, q.b);
+    if (q.op === '÷'){
+      const sp = shiftPair(q);
+      vis = '<div class="big-dec">' + esc(sp.newDividend) + ' <span class="op-symbol">÷</span> ' + esc(sp.newDivisor) + '</div>';
+      if (q.rounded) sub = 'Give the answer rounded to <b>2</b> decimal places.';
+    }
+    setStep('Step ' + n + ': Solve it', sub, eqLine(q), vis, true, true);
+    $('answer-zone').innerHTML = boxHTML(true); wireBoxes();
+    return;
+  }
+}
+let hintWired = false;
+function wireHintOnce(){
+  if (hintWired) return; hintWired = true;
+  $('btn-hint').addEventListener('click', onHint);
+}
+/* ---------- checking ---------- */
+function numEq(typed, correctStr){
+  if (!/^-?\d*\.?\d*$/.test(typed) || typed === '' || typed === '.' || typed === '-') return false;
+  const t = Number(typed), c = Number(correctStr);
+  if (!isFinite(t) || !isFinite(c)) return false;
+  return Math.abs(t - c) < 1e-9;
+}
+function onCheck(){
+  const key = steps[si].key;
+  const vals = boxVals();
+  if (vals.some(v => v === '')) return;
+  let ok = false;
+  if (key === 'places'){
+    ok = vals[0] === String(placesAnswer(q));
+  }
+  else if (key === 'shift'){
+    const sp = shiftPair(q);
+    ok = numEq(vals[0], sp.newDividend) && numEq(vals[1], sp.newDivisor);
+  }
+  else if (key === 'solve'){
+    ok = numEq(vals[0], q.ans);
+  }
+  recordStep(key, ok);
+  if (ok) nextStep();
+  else { wrongQ = true; showExplain(explainText(key)); }
+}
+
+/* ---------- parents ---------- */
+function showParents(){
+  let rows = '';
+  Object.keys(STEP_NAMES).forEach(k => {
+    const s = st(k);
+    const pct = s.a ? Math.round(100 * s.c / s.a) : null;
+    rows += '<div class="kv"><span>' + STEP_NAMES[k] + '</span><span>' +
+      (pct === null ? 'not tried yet' : pct + '% correct · ' + s.h + ' hint' + (s.h === 1 ? '' : 's')) + '</span></div>';
+  });
+  showOverlay('For parents',
+    '<div class="kv"><span>Stars earned</span><span>★ ' + S.stars + '</span></div>' +
+    '<div class="kv"><span>Best streak</span><span>' + S.bestStreak + '</span></div>' +
+    '<div class="kv"><span>Rounds played</span><span>' + S.rounds + '</span></div>' +
+    '<h4 style="margin:.8em 0 .2em">All levels — per step</h4>' + rows +
+    '<p class="device-note">Progress is saved only on this device.</p>',
+    [
+      { label:'Reset progress', onClick:confirmReset },
+      { label:'Close', primary:true }
+    ]);
+}
+function confirmReset(){
+  showOverlay('Reset progress?',
+    '<p>This erases stars, streaks, and all stats on this device. Are you sure?</p>',
+    [
+      { label:'Yes, erase everything', onClick:() => { S = blankStore(); save(); updatePills(); } },
+      { label:'Keep my progress', primary:true }
+    ]);
+}
+
+/* ---------- init ---------- */
+function init(){
+  updatePills();
+  document.querySelectorAll('button.level').forEach(b => {
+    if (b.disabled) return;
+    b.addEventListener('click', () => { level = b.dataset.level; startRound(); });
+  });
+  $('btn-back').addEventListener('click', () => showScreen('start'));
+  $('btn-check').addEventListener('click', onCheck);
+  $('btn-parents-start').addEventListener('click', showParents);
+  $('pad').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || !selBox) return;
+    const k = b.dataset.k;
+    let v = selBox.textContent;
+    if (k === 'back') v = v.slice(0, -1);
+    else if (k === 'clear') v = '';
+    else if (k === '.'){ if (v.indexOf('.') === -1 && v.length < 9) v += '.'; }
+    else if (v.replace('.', '').length < 8) v += k;
+    selBox.textContent = v;
+  });
+  showScreen('start');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
